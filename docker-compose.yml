@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  takeout-app:
+    build: .
+    container_name: takeout_web_app
+    ports:
+      - "5000:5000"
+    volumes:
+      # Application data on SSD (C: drive)
+      - .:/app
+      - ./data:/app/data
+      # Backups on HDD (usually D: or E: drive) - Change the 'D:/TakeoutBackups' path to your 3TB HDD path
+      # - D:/TakeoutBackups:/app/backups
+    environment:
+      - FLASK_ENV=production
+      - STORAGE_PATH=/app/backups
+    restart: always
