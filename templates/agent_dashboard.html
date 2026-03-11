@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Takeout Agent — Automation Dashboard</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0c10;
+            --bg-panel: #161b22;
+            --bg-accent: #21262d;
+            --accent: #238636;
+            --accent-hover: #2ea043;
+            --accent-blue: #1f6feb;
+            --accent-red: #da3633;
+            --accent-orange: #d29922;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --border: #30363d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 280px;
+            max-width: 400px;
+            background: var(--bg-panel);
+            color: var(--text-main);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            animation: slideInRight 0.3s ease-out;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .toast.success {
+            border-left-color: var(--accent);
+        }
+
+        .toast.error {
+            border-left-color: var(--accent-red);
+        }
+
+        .toast.cleanup {
+            animation: fadeOut 0.3s forwards;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-panel);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .brand span {
+            color: var(--accent-blue);
+        }
+
+        /* Tabs Navigation */
+        .tabs-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-panel);
+            padding: 0.5rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 8px 8px 0 0;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+            top: 1px;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-accent);
+            color: var(--text-main);
+            border-color: var(--accent-blue);
+            z-index: 2;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-dark);
+        }
+
+        .view-pane {
+            flex: 1;
+            display: none;
+            padding: 1.5rem;
+            overflow: hidden;
+        }
+
+        .view-pane.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Stream View Layout */
+        #view-stream.active {
+            flex-direction: row;
+        }
+
+        .viewport-container {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow: hidden;
+        }
+
+        .viewport {
+            flex: 1;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #browserStream {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.success {
+            color: #3fb950;
+        }
+
+        .stat-value.failed {
+            color: #f85149;
+        }
+
+        /* Accounts View Layout */
+        .accounts-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .toolbar {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .select-input {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: rgba(218, 54, 51, 0.1);
+            color: var(--accent-red);
+            border-color: rgba(218, 54, 51, 0.4);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-accent);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Table Styles */
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .check-col {
+            width: 50px;
+            text-align: center;
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--accent-blue);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-pending {
+            background: rgba(139, 148, 158, 0.1);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .badge-done {
+            background: rgba(35, 134, 54, 0.15);
+            color: #3fb950;
+            border: 1px solid rgba(35, 134, 54, 0.3);
+        }
+
+        .badge-failed {
+            background: rgba(218, 54, 51, 0.15);
+            color: #f85149;
+            border: 1px solid rgba(218, 54, 51, 0.3);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .form-group input {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-main);
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        /* Stream View Adjustments */
+        .side-pane {
+            flex: 0.8;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 380px;
+            overflow: hidden;
+        }
+
+        .control-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .log-box {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            overflow-y: auto;
+            color: #d1d5db;
+            line-height: 1.5;
+        }
+
+        .ts {
+            color: var(--text-muted);
+            margin-right: 8px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <header>
+        <div class="brand">🤖 <span>Takeout Agent</span> — Automation Dashboard</div>
+        <div style="display: flex; align-items: center; gap: 1.25rem; font-size: 0.9rem;">
+            <div style="color: var(--text-muted);">{{ username }} • <span
+                    style="font-family: monospace; color: var(--accent-blue);">{{ hostname
+                    }}</span></div>
+            <button class="btn btn-outline" onclick="disconnect()">Disconnect</button>
+        </div>
+    </header>
+
+    <nav class="tabs-nav">
+        <button class="tab-btn active" id="tab-stream" onclick="switchView('stream')">Browser Stream</button>
+        <button class="tab-btn" id="tab-accounts" onclick="switchView('accounts')">Target Accounts</button>
+    </nav>
+
+    <main class="main-container">
+        <!-- View: Browser Stream -->
+        <div id="view-stream" class="view-pane active">
+            <div class="viewport-container">
+                <div class="viewport">
+                    <img id="browserStream" src="" style="display: none;">
+                    <div id="streamPlaceholder" style="text-align: center; color: var(--text-muted);">
+                        <div style="font-size: 3rem; margin-bottom: 0.75rem; opacity: 0.2;">👁️</div>
+                        <p style="font-weight: 500;">Awaiting Automation Stream...</p>
+                    </div>
+                    <div id="streamInfo"
+                        style="position: absolute; bottom: 1.25rem; left: 1.25rem; background: rgba(0,0,0,0.7); border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; display: none; color: #3fb950; display: flex; align-items: center; gap: 0.5rem;">
+                        <span
+                            style="width: 8px; height: 8px; background: #3fb950; border-radius: 50%; display: inline-block;"></span>
+                        Live Stream Connected
+                    </div>
+                </div>
+
+                <div class="control-card">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Automation Mode</label>
+                            <select id="modeSelect" class="select-input" onchange="saveAgentSettings()">
+                                <option value="create">📂 Create Backups</option>
+                                <option value="download">📥 Download Backups</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Browser Engine</label>
+                            <select id="browserType" class="select-input" onchange="saveAgentSettings()">
+                                <option value="chrome">🌐 Google Chrome</option>
+                                <option value="firefox">🦊 Mozilla Firefox</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Concurrent</label>
+                            <input type="number" id="settingConcurrentSessions" min="1" max="10" value="3"
+                                onchange="saveAgentSettings()" class="select-input"
+                                style="padding-left: 10px; font-family: monospace;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
+                        <button class="btn btn-primary" id="startBtn" onclick="startAutomation()"
+                            style="background: var(--accent); justify-content: center; font-size: 0.95rem;">▶ Start
+                            Automation</button>
+                        <button class="btn btn-outline" id="pauseBtn" onclick="togglePause()" disabled
+                            style="justify-content: center; background: var(--accent-orange); border-color: var(--accent-orange); color: #000;">⏸
+                            Pause</button>
+                        <button class="btn btn-outline" id="stopBtn" onclick="stopAutomation()" disabled
+                            style="justify-content: center; background: var(--accent-red); border-color: var(--accent-red); color: white;">⏹
+                            Stop Flow</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-pane">
+                <div class="control-card">
+                    <div
+                        style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                        Browser View Control</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.25rem;">
+                        <button class="btn btn-primary" id="btnShow" onclick="toggleBrowser(true)"
+                            style="justify-content: center;">👁️ Visible</button>
+                        <button class="btn btn-outline" id="btnHide" onclick="toggleBrowser(false)"
+                            style="justify-content: center;">🔒 Hidden</button>
+                    </div>
+                </div>
+
+                <div class="control-card" style="margin-top: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label
+                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main);">
+                            <input type="checkbox" id="emailNotifyToggle" onchange="saveAgentSettings()"
+                                style="width: auto; accent-color: var(--accent);">
+                            Send Email Notifications
+                        </label>
+                        <div
+                            style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; margin-left: 1.5rem;">
+                            Email will be sent to the configured SMTP user per account task.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-card" style="margin-top: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label
+                            style="color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                            📁 Download Path
+                        </label>
+                        <input type="text" id="downloadPathInput" placeholder="Leave blank for default Downloads folder"
+                            oninput="saveAgentSettings()"
+                            style="margin-top: 0.4rem; font-size: 0.85rem; font-family: monospace;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                            e.g. <code
+                                style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px;">C:\GoogleBackups</code>
+                            — sub-folders are created per account.
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="control-card" style="margin-top: 1rem;">
+                    <div
+                        style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+                        ✉️ Email Notifications — SMTP
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                        Your email is auto-filled from your account. Only an <strong
+                            style="color: var(--text-main);">App Password</strong> is needed —
+                        <a href="https://myaccount.google.com/apppasswords" target="_blank"
+                            style="color: var(--accent); text-decoration: none;">generate one here ↗</a>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 80px; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" id="smtpServer" placeholder="smtp.gmail.com" style="font-size: 0.82rem;">
+                        <input type="number" id="smtpPort" placeholder="587" value="587" style="font-size: 0.82rem;">
+                    </div>
+                    <input type="email" id="smtpUser" placeholder="Auto-filled from your account"
+                        style="font-size: 0.82rem; margin-bottom: 0.5rem; color: var(--text-muted);">
+                    <input type="password" id="smtpPassword" placeholder="🔑 Google App Password (16-char)"
+                        style="font-size: 0.82rem; margin-bottom: 0.5rem;">
+                    <button class="btn btn-outline" onclick="saveSmtpSettings()"
+                        style="width: 100%; justify-content: center; font-size: 0.82rem;">Save SMTP Config</button>
+                    <div id="smtpStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;"></div>
+                </div>
+
+
+
+                <div class="control-card" style="flex: 1; min-height: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span
+                            style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Automation
+                            Logs</span>
+                        <button class="btn btn-outline" onclick="clearLogs()"
+                            style="padding: 2px 8px; font-size: 0.7rem; border: none;">Clear</button>
+                    </div>
+                    <div class="log-box" id="logBox">
+                        <div class="log-line">--- LOGS INITIALIZED ---</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- View: Target Accounts -->
+        <div id="view-accounts" class="view-pane">
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; gap: 1.5rem;">
+
+                <!-- Account Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Create Success</div>
+                        <div class="stat-value success" id="stat-create-success">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Create Failed</div>
+                        <div class="stat-value failed" id="stat-create-failed">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Download Success</div>
+                        <div class="stat-value success" id="stat-download-success">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Download Failed</div>
+                        <div class="stat-value failed" id="stat-download-failed">0</div>
+                    </div>
+                </div>
+
+                <!-- Main Data Container -->
+                <div class="accounts-pane">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <input type="text" id="accountSearch" placeholder="Search by email address..."
+                                oninput="filterAccounts()">
+                        </div>
+                        <select id="statusFilter" class="select-input" onchange="filterAccounts()">
+                            <option value="all">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="done">Completed</option>
+                            <option value="failed">Errors</option>
+                        </select>
+                        <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" disabled>
+                            🗑️ Delete Selected (<span id="selectedCount">0</span>)
+                        </button>
+                        <button class="btn btn-primary" onclick="openAddModal()">
+                            + Add Account
+                        </button>
+                        <input type="file" id="csvImportInput" accept=".csv" style="display: none;"
+                            onchange="handleCsvUpload(this)">
+                        <button class="btn btn-outline" onclick="document.getElementById('csvImportInput').click()"
+                            id="importCsvBtn">
+                            Import CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="exportCsv()">
+                            Export CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="loadAccounts()" title="Refresh List">
+                            🔄
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="accountsTable">
+                            <thead>
+                                <tr>
+                                    <th class="check-col"><input type="checkbox" id="selectAll"
+                                            onclick="toggleSelectAll()"></th>
+                                    <th>Email Address</th>
+                                    <th>Backup Codes</th>
+                                    <th>Create Status</th>
+                                    <th>Download Status</th>
+                                    <th style="width: 120px; text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accountsBody">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Add New Account -->
+    <div id="addModal" class="modal-overlay" onclick="if(event.target===this) closeAddModal()">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span style="font-weight: 700; font-size: 1.1rem;">Add Account</span>
+                <button onclick="closeAddModal()"
+                    style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.4rem;">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Enter credentials for a
+                    target Google account to automate.</p>
+                <div class="form-group">
+                    <label>Gmail Address</label>
+                    <input type="email" id="new-email" placeholder="example@gmail.com" autofocus>
+                </div>
+                <div class="form-group">
+                    <label>Account Password</label>
+                    <input type="password" id="new-password" placeholder="••••••••••••">
+                </div>
+                <div class="form-group">
+                    <label>8-Digit Backup Codes (Optional)</label>
+                    <input type="text" id="new-backup" placeholder="12345678, 87654321">
+                    <small style="color: var(--text-muted); font-size: 0.75rem;">Provide multiple codes separated by
+                        commas for 2FA bypass.</small>
+                </div>
+                <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                    <button class="btn btn-outline" onclick="closeAddModal()"
+                        style="flex: 1; justify-content: center;">Cancel</button>
+                    <button class="btn btn-primary" id="saveAccountBtn" onclick="submitNewAccount()"
+                        style="flex: 2; justify-content: center; padding: 12px;">Save Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Centralized notification system
+        window.showToast = function (message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+            toast.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span>${icon}</span>
+                    <span style="font-size:0.9rem; font-weight:500;">${message}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; padding:0 4px;">✕</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        };
+        const showToast = window.showToast;
+
+        let isRunning = false;
+        let isPaused = false;
+        let showBrowser = true;
+        let logEventSource = null;
+        let streamInterval = null;
+        let allAccounts = [];
+
+        function switchView(view) {
+            document.querySelectorAll('.view-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('view-' + view).classList.add('active');
+            document.getElementById('tab-' + view).classList.add('active');
+            if (view === 'accounts') loadAccounts();
+        }
+
+        function toggleBrowser(show) {
+            showBrowser = show;
+            document.getElementById('btnShow').classList.toggle('btn-primary', show);
+            document.getElementById('btnShow').classList.toggle('btn-outline', !show);
+            document.getElementById('btnHide').classList.toggle('btn-primary', !show);
+            document.getElementById('btnHide').classList.toggle('btn-outline', show);
+
+            fetch('/api/local/toggle_browser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ show })
+            });
+        }
+
+        // --- Automation Logic ---
+        async function startAutomation() {
+            const mode = document.getElementById('modeSelect').value;
+            const browser_type = document.getElementById('browserType').value;
+            const notify_on_complete = document.getElementById('emailNotifyToggle').checked;
+            const max_concurrent = parseInt(document.getElementById('settingConcurrentSessions').value) || 3;
+            const download_path = document.getElementById('downloadPathInput').value.trim();
+
+            const resp = await fetch('/api/local/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mode,
+                    settings: { browser_type, showBrowser, source: 'manual', notify_on_complete, max_concurrent, download_path }
+                })
+            });
+            const data = await resp.json();
+            if (data.started) {
+                // Clear state for new run
+                document.getElementById('browserStream').src = "";
+                document.getElementById('browserStream').style.display = 'none';
+                document.getElementById('streamPlaceholder').style.display = 'block';
+                document.getElementById('streamInfo').style.display = 'none';
+
+                isRunning = true;
+                updateUI(true);
+                startLogs();
+                startStream();
+                appendLog('🚀 Automation sequence started: ' + mode);
+            } else {
+                showToast('Start failed: ' + (data.error || 'Check server connection'), 'error');
+            }
+        }
+
+        async function stopAutomation() {
+            await fetch('/api/local/stop', { method: 'POST' });
+            isRunning = false;
+            updateUI(false);
+            stopStream();
+            appendLog('⏹ Automation stopped by user');
+        }
+
+        async function togglePause() {
+            const url = isPaused ? '/api/local/resume' : '/api/local/pause';
+            const resp = await fetch(url, { method: 'POST' });
+            if (resp.ok) {
+                isPaused = !isPaused;
+                document.getElementById('pauseBtn').textContent = isPaused ? '▶ Resume' : '⏸ Pause';
+                document.getElementById('pauseBtn').style.background = isPaused ? 'var(--accent)' : 'var(--accent-orange)';
+                document.getElementById('pauseBtn').style.borderColor = isPaused ? 'var(--accent)' : 'var(--accent-orange)';
+                appendLog(isPaused ? '⏸ Run Paused' : '▶ Run Resumed');
+            }
+        }
+
+        function updateUI(running) {
+            document.getElementById('startBtn').disabled = running;
+            document.getElementById('stopBtn').disabled = !running;
+            document.getElementById('pauseBtn').disabled = !running;
+            if (!running) {
+                isPaused = false;
+                document.getElementById('pauseBtn').textContent = '⏸ Pause';
+                document.getElementById('pauseBtn').style.background = 'var(--accent-orange)';
+            }
+        }
+
+        // --- Account Management ---
+        function openAddModal() { document.getElementById('addModal').style.display = 'flex'; document.getElementById('new-email').focus(); }
+        function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
+
+        async function submitNewAccount() {
+            const email = document.getElementById('new-email').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+            const backup_codes = document.getElementById('new-backup').value.trim();
+
+            if (!email || !password) return showToast('Email and Password are required', 'error');
+
+            const btn = document.getElementById('saveAccountBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const resp = await fetch('/api/local/add_account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, backup_codes })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    closeAddModal();
+                    loadAccounts();
+                    appendLog('✅ Manually added account: ' + email);
+                    document.getElementById('new-email').value = '';
+                    document.getElementById('new-password').value = '';
+                    document.getElementById('new-backup').value = '';
+                } else {
+                    const failReason = data.message || data.error || JSON.stringify(data);
+                    showToast('Save Failed: ' + failReason, 'error');
+                }
+            } catch (e) {
+                showToast('Connection error with automation agent: ' + e, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Account';
+            }
+        }
+
+        async function loadAccounts() {
+            try {
+                const resp = await fetch('/api/local/accounts');
+                const data = await resp.json();
+                if (Array.isArray(data)) {
+                    allAccounts = data;
+                    updateStats();
+                    renderAccounts(allAccounts);
+                } else {
+                    console.error('Invalid accounts data format:', data);
+                    allAccounts = [];
+                    renderAccounts([]);
+                }
+            } catch (e) {
+                console.error('Failed to load accounts', e);
+            }
+        }
+
+        function renderAccounts(accounts) {
+            const tbody = document.getElementById('accountsBody');
+            tbody.innerHTML = accounts.map(acc => `
+                <tr data-email="${acc.email}">
+                    <td class="check-col"><input type="checkbox" class="row-check" onchange="updateSelection()"></td>
+                    <td style="font-weight:600;">${acc.email}</td>
+                    <td style="font-family:'JetBrains Mono'; color:var(--text-muted); font-size:0.8rem;">${acc.backup_codes || 'N/A'}</td>
+                    <td><span class="badge badge-${statusClass(acc.create_status)}">${acc.create_status || 'Pending'}</span></td>
+                    <td><span class="badge badge-${statusClass(acc.download_status)}">${acc.download_status || 'Pending'}</span></td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-danger" onclick="deleteSingle('${acc.email}')" style="padding: 4px 10px; font-size: 0.75rem; background: transparent;">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+            updateSelection();
+        }
+
+        function updateStats() {
+            const stats = { cs: 0, cf: 0, ds: 0, df: 0 };
+            allAccounts.forEach(a => {
+                if (a.create_status === 'Done' || (a.create_status && a.create_status.includes('✅'))) stats.cs++;
+                if (a.create_status && (a.create_status.includes('❌') || a.create_status.toLowerCase().includes('failed'))) stats.cf++;
+                if (a.download_status === 'Done' || (a.download_status && a.download_status.includes('✅'))) stats.ds++;
+                if (a.download_status && (a.download_status.includes('❌') || a.download_status.toLowerCase().includes('failed'))) stats.df++;
+            });
+            document.getElementById('stat-create-success').textContent = stats.cs;
+            document.getElementById('stat-create-failed').textContent = stats.cf;
+            document.getElementById('stat-download-success').textContent = stats.ds;
+            document.getElementById('stat-download-failed').textContent = stats.df;
+        }
+
+        function filterAccounts() {
+            const query = document.getElementById('accountSearch').value.toLowerCase();
+            const filter = document.getElementById('statusFilter').value;
+
+            const filtered = allAccounts.filter(acc => {
+                const matchesSearch = acc.email.toLowerCase().includes(query);
+                let matchesStatus = true;
+                if (filter === 'pending') matchesStatus = !acc.create_status || acc.create_status === 'Pending';
+                if (filter === 'done') matchesStatus = acc.create_status === 'Done' || (acc.create_status && acc.create_status.includes('✅'));
+                if (filter === 'failed') matchesStatus = acc.create_status && (acc.create_status.includes('❌') || acc.create_status.toLowerCase().includes('failed'));
+                return matchesSearch && matchesStatus;
+            });
+            renderAccounts(filtered);
+        }
+
+        function statusClass(s) {
+            if (!s || s === 'Pending') return 'pending';
+            if (s.includes('✅') || s === 'Done') return 'done';
+            if (s.includes('❌') || s.toLowerCase().includes('failed')) return 'failed';
+            return 'pending';
+        }
+
+        // --- Selection & Batch Logic ---
+        function toggleSelectAll() {
+            const master = document.getElementById('selectAll');
+            document.querySelectorAll('.row-check').forEach(c => c.checked = master.checked);
+            updateSelection();
+        }
+
+        function updateSelection() {
+            const checks = document.querySelectorAll('.row-check:checked');
+            document.getElementById('selectedCount').textContent = checks.length;
+            document.getElementById('deleteSelectedBtn').disabled = checks.length === 0;
+
+            // Handle header checkbox sync
+            const all = document.querySelectorAll('.row-check');
+            document.getElementById('selectAll').checked = all.length > 0 && checks.length === all.length;
+        }
+
+        async function deleteSingle(email) {
+            if (!confirm(`Permanently remove ${email}?`)) return;
+            const resp = await fetch('/api/local/delete_accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emails: [email] })
+            });
+            if (resp.ok) {
+                appendLog('🗑️ Deleted account: ' + email);
+                loadAccounts();
+            }
+        }
+
+        async function deleteSelected() {
+            const emails = Array.from(document.querySelectorAll('.row-check:checked'))
+                .map(c => c.closest('tr').dataset.email);
+            if (!confirm(`Delete ${emails.length} selected accounts?`)) return;
+
+            const btn = document.getElementById('deleteSelectedBtn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+
+            const resp = await fetch('/api/local/delete_accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emails })
+            });
+            if (resp.ok) {
+                appendLog(`🗑️ Deleted ${emails.length} accounts`);
+                showToast(`Deleted ${emails.length} accounts`, "success");
+                loadAccounts();
+            } else {
+                showToast("Failed to delete accounts", "error");
+            }
+            btn.textContent = `Delete Selected (0)`;
+        }
+
+        async function handleCsvUpload(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            const btn = document.getElementById('importCsvBtn');
+            const originalText = btn.textContent;
+
+            try {
+                btn.disabled = true;
+                btn.textContent = 'Importing...';
+                appendLog(`📤 Uploading ${file.name}...`);
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const resp = await fetch('/api/local/upload_csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    appendLog(`✅ ${data.message}`);
+                    showToast(data.message, 'success');
+                    loadAccounts(); // Refresh the list
+                } else {
+                    appendLog(`❌ Import failed: ${data.message || data.error}`);
+                    showToast('Import Failed: ' + (data.message || data.error), 'error');
+                }
+            } catch (e) {
+                appendLog(`❌ Network error during CSV upload`);
+                showToast('Connection error with automation agent', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                input.value = ''; // Reset input
+            }
+        }
+
+        function exportCsv() {
+            appendLog('📥 Exporting accounts to CSV...');
+            window.location.href = '/api/local/export_csv';
+        }
+
+        // --- Logging & Stream ---
+        function startLogs() {
+            if (logEventSource) logEventSource.close();
+            logEventSource = new EventSource('/api/local/logs');
+            logEventSource.onmessage = e => {
+                const msg = JSON.parse(e.data);
+                appendLog(msg);
+                if (msg.includes('📊') || msg.includes('🏁') || msg.includes('Completed session for')) {
+                    loadAccounts();
+                }
+            };
+            logEventSource.onerror = () => { appendLog('⚠️ Log connection lost. Reconnecting...'); };
+        }
+
+        function appendLog(msg) {
+            const box = document.getElementById('logBox');
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            line.innerHTML = `<span class="ts">[${ts}]</span>${msg}`;
+            box.appendChild(line);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function clearLogs() { document.getElementById('logBox').innerHTML = '<div class="log-line">--- LOGS CLEARED ---</div>'; }
+
+        function startStream() {
+            if (streamInterval) clearInterval(streamInterval);
+            const img = document.getElementById('browserStream');
+            const placeholder = document.getElementById('streamPlaceholder');
+            const info = document.getElementById('streamInfo');
+
+            streamInterval = setInterval(async () => {
+                try {
+                    const r = await fetch('/api/local/screenshot');
+                    const d = await r.json();
+                    if (d.image) {
+                        img.src = 'data:image/jpeg;base64,' + d.image;
+                        img.onload = () => {
+                            img.style.display = 'block';
+                            placeholder.style.display = 'none';
+                            info.style.display = 'flex';
+                        };
+                    } else {
+                        img.style.display = 'none';
+                        placeholder.style.display = 'block';
+                        info.style.display = 'none';
+                    }
+                } catch (e) {
+                    // Fail silently for stream
+                }
+            }, 1000);
+        }
+
+        function stopStream() {
+            clearInterval(streamInterval);
+            document.getElementById('browserStream').style.display = 'none';
+            document.getElementById('streamPlaceholder').style.display = 'block';
+            document.getElementById('streamInfo').style.display = 'none';
+        }
+
+        async function disconnect() {
+            if (confirm("Disconnect and log out this agent? Current progress will be saved.")) {
+                await fetch('/api/local/disconnect', { method: 'POST' });
+                window.location.reload();
+            }
+        }
+
+        // --- Settings Persistence ---
+        function saveAgentSettings() {
+            const settings = {
+                mode: document.getElementById('modeSelect').value,
+                browser: document.getElementById('browserType').value,
+                concurrent: document.getElementById('settingConcurrentSessions').value,
+                notify: document.getElementById('emailNotifyToggle').checked,
+                downloadPath: document.getElementById('downloadPathInput').value.trim()
+            };
+            localStorage.setItem('agentDashboardSettings', JSON.stringify(settings));
+        }
+
+        function loadAgentSettings() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('agentDashboardSettings'));
+                if (saved) {
+                    if (saved.mode) document.getElementById('modeSelect').value = saved.mode;
+                    if (saved.browser) document.getElementById('browserType').value = saved.browser;
+                    if (saved.concurrent) document.getElementById('settingConcurrentSessions').value = saved.concurrent;
+                    if (saved.notify !== undefined) document.getElementById('emailNotifyToggle').checked = saved.notify;
+                    if (saved.downloadPath !== undefined) document.getElementById('downloadPathInput').value = saved.downloadPath;
+                }
+            } catch (e) {
+                console.error('Failed to load local settings', e);
+            }
+        }
+
+        async function saveSmtpSettings() {
+            const btn = event.currentTarget;
+            const statusEl = document.getElementById('smtpStatus');
+            const payload = {
+                smtp_server: document.getElementById('smtpServer').value.trim(),
+                smtp_port: parseInt(document.getElementById('smtpPort').value) || 587,
+                smtp_user: document.getElementById('smtpUser').value.trim(),
+                smtp_password: document.getElementById('smtpPassword').value
+            };
+            if (!payload.smtp_server || !payload.smtp_user) {
+                statusEl.textContent = '⚠️ Server and email are required.';
+                statusEl.style.color = 'var(--accent-red)';
+                return;
+            }
+            try {
+                const resp = await fetch('/api/local/smtp_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const d = await resp.json();
+                if (d.success) {
+                    statusEl.textContent = '✅ SMTP settings saved.';
+                    statusEl.style.color = 'var(--accent)';
+                } else {
+                    statusEl.textContent = '❌ ' + (d.error || 'Failed to save.');
+                    statusEl.style.color = 'var(--accent-red)';
+                }
+            } catch (e) {
+                statusEl.textContent = '❌ Network error.';
+                statusEl.style.color = 'var(--accent-red)';
+            }
+        }
+
+        async function loadSmtpSettings() {
+            try {
+                const resp = await fetch('/api/local/smtp_config');
+                if (!resp.ok) return;
+                const d = await resp.json();
+                if (d.smtp_server) document.getElementById('smtpServer').value = d.smtp_server;
+                if (d.smtp_port) document.getElementById('smtpPort').value = d.smtp_port;
+                if (d.smtp_password) document.getElementById('smtpPassword').value = d.smtp_password;
+
+                // Auto-fill email from saved SMTP or fallback to agent's registered username
+                if (d.smtp_user) {
+                    document.getElementById('smtpUser').value = d.smtp_user;
+                } else {
+                    // Pull from agent info endpoint (username = the operator's email)
+                    try {
+                        const info = await fetch('/api/agent/info').then(r => r.json());
+                        if (info.username) document.getElementById('smtpUser').value = info.username;
+                    } catch (_) { }
+                }
+            } catch (e) { }
+        }
+
+        window.onload = () => {
+            loadAgentSettings();
+            loadSmtpSettings();
+            fetch('/api/local/status').then(r => r.json()).then(d => {
+                if (d.running) {
+                    isRunning = true;
+                    updateUI(true);
+                    startLogs();
+                    startStream();
+                }
+            });
+            loadAccounts();
+            setInterval(loadAccounts, 5000);
+            switchView('stream');
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - TO THE NEW</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('takeout_theme') || 'midnight';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    <style>
+        :root,
+        [data-theme="midnight"] {
+            --bg-dark: #0a0c12;
+            --bg-sidebar: #11141d;
+            --bg-card: #161b26;
+            --bg-input: #1f2430;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --border: #242b3d;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --sidebar-width: 260px;
+        }
+
+        [data-theme="light"] {
+            --bg-dark: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.2);
+            --border: #e2e8f0;
+            --danger: #dc2626;
+            --success: #059669;
+            --warning: #d97706;
+        }
+
+        [data-theme="light"] .header,
+        [data-theme="light"] .sidebar-logo {
+            background: #ffffff !important;
+            color: #0f172a !important;
+        }
+
+        [data-theme="light"] .nav-item,
+        [data-theme="light"] th {
+            color: #64748b !important;
+        }
+
+        [data-theme="light"] .nav-item:hover {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+
+        [data-theme="hacker"] {
+            --bg-dark: #000000;
+            --bg-sidebar: #050505;
+            --bg-card: #0a0a0a;
+            --bg-input: #111111;
+            --text-main: #00ff00;
+            --text-muted: #008f11;
+            --accent: #00ff41;
+            --accent-glow: rgba(0, 255, 65, 0.3);
+            --border: #003b00;
+        }
+
+        [data-theme="ocean"] {
+            --bg-dark: #082f49;
+            --bg-sidebar: #0c4a6e;
+            --bg-card: #075985;
+            --bg-input: #0c4a6e;
+            --text-main: #f0f9ff;
+            --text-muted: #7dd3fc;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.4);
+            --border: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 0;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 0 1.5rem 2rem;
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .sidebar-logo span {
+            color: var(--accent);
+        }
+
+        .nav-group {
+            flex: 1;
+            padding: 0 0.75rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+        }
+
+        .nav-label {
+            padding: 1.5rem 1.5rem 0.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        .sidebar-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* --- Main Content --- */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            height: 70px;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 90;
+        }
+
+        .profile-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 4px 12px;
+            padding-right: 4px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .profile-trigger:hover {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .view-panel {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .view-panel.active {
+            display: block;
+        }
+
+        /* --- Security Banner --- */
+        .security-banner {
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #991b1b;
+            animation: slideDown 0.4s ease-out;
+            text-decoration: none;
+        }
+
+        .security-banner svg {
+            color: #ef4444;
+            flex-shrink: 0;
+        }
+
+        .security-banner a {
+            color: white;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Components --- */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* --- Table Styling --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* --- Audit Log Specifics --- */
+        .log-timestamp {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .log-identity {
+            font-weight: 600;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--bg-input);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .tag {
+            background: var(--bg-input);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        /* --- Controls --- */
+        .btn {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            color: var(--text-main);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text-main);
+            display: inline-flex;
+            display: block;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            border-color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 14px;
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .search-box input {
+            padding-left: 36px;
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+
+<body onload="initAdmin()">
+    <div id="toast-container"></div>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            TO THE NEW
+        </div>
+
+        <nav class="nav-group">
+            <div class="nav-item active" onclick="switchView('agents', this)">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                    </path>
+                </svg>
+                Connected Agents
+            </div>
+
+            <div class="nav-label">Management</div>
+            <div class="nav-item" onclick="switchView('users', this)">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13.732 4c.77-1.333 2.694-1.333 3.464 0L19.5 7.5a2 2 0 010 2l-2.304 3.5c-.77 1.333-2.694 1.333-3.464 0L11.428 9.5a2 2 0 010-2l2.304-3.5z">
+                    </path>
+                </svg>
+                User Management
+            </div>
+
+            <div class="nav-label">Security</div>
+            <div class="nav-item" onclick="switchView('audit', this)">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                System Audit Logs
+            </div>
+
+            <div class="nav-label">Compliance</div>
+            <div class="nav-item" onclick="downloadAnnualReport()">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                Backup Report
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/" class="btn" style="width:100%; justify-content:center; margin-bottom:8px;">Back to
+                Automation</a>
+            <a href="/logout" class="btn"
+                style="width:100%; justify-content:center; border-color:var(--danger); color:var(--danger);">Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main View -->
+    <main class="main">
+        {% if session.get('password_warning') %}
+        <div class="security-banner">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                </path>
+            </svg>
+            <span><strong>Security Risk:</strong> You are using the default admin password. Change it immediately to
+                secure your server.</span>
+            <a href="javascript:void(0)"
+                onclick="switchView('users', document.querySelector('.nav-item[onclick*=\'users\']'))">Update
+                Password</a>
+        </div>
+        {% endif %}
+        <header class="header">
+            <h1 id="viewTitle" style="font-size: 1.25rem;">Connected Agents</h1>
+            <div style="display:flex; align-items:center; gap:1.5rem;">
+                <div
+                    style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; text-align:right;">
+                    Google Takeout Tool
+                    <div style="font-size:0.85rem; font-weight:600; color:var(--accent); text-transform:none;">by Sanjay
+                        Chauhan</div>
+                </div>
+                <div class="profile-trigger" style="cursor: default;">
+                    <span style="font-size:0.85rem; color:var(--text-muted);">{{ session.username[:20] }}{% if
+                        session.username|length > 20 %}...{% endif %}</span>
+                    <div class="profile-avatar">{{ session.username[0].upper() if session.username else 'A' }}</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- AGENTS VIEW -->
+        <div id="view-agents" class="view-panel active">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Live Agent Status</h2>
+                    <button class="btn" onclick="fetchAgents()" style="font-size:0.8rem;">Refresh</button>
+                </div>
+                <div id="agentsContent">
+                    <!-- Loaded via JS -->
+                    <div style="padding: 2rem; text-align: center; color: var(--text-muted);">Loading agents...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- USERS VIEW -->
+        <div id="view-users" class="view-panel">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Authorized Users</h2>
+                        <div class="badge" style="background:var(--bg-input);">{{ users|length }} Active</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Identity</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <div class="log-identity">
+                                        <div class="avatar">{{ user.username[0].upper() if user.username else 'U' }}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 600;">{{ user.username }}</div>
+                                            <div style="font-size:0.75rem; color:var(--text-muted);">ID: {{ user.id }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge"
+                                        style="background: {{ 'rgba(59, 130, 246, 0.1)' if user.role == 'admin' else 'var(--bg-input)' }}; color: {{ 'var(--accent)' if user.role == 'admin' else 'var(--text-muted)' }};">{{
+                                        user.role.upper() }}</span></td>
+                                <td>
+                                    {% if session.user_id != user.id %}
+                                    <div style="display:flex; gap:8px;">
+                                        <a href="/admin/user_logs/{{ user.username }}" class="btn btn-outline"
+                                            style="padding:4px 8px; font-size:0.75rem;">View Logs</a>
+                                        <button class="btn" style="padding:4px 8px; font-size:0.75rem;"
+                                            onclick="resetMfa({{ user.id }}, '{{ user.username }}')">Reset 2FA</button>
+                                        {% if user.username != 'admin' %}
+                                        <form action="/admin/delete_user/{{ user.id }}" method="POST"
+                                            onsubmit="return confirm('Revoke access?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn"
+                                                style="padding:4px 8px; font-size:0.75rem; border-color:var(--danger); color:var(--danger);">Revoke</button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    {% else %}<span class="badge">Me</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Invite User</h2>
+                        </div>
+                        <div style="padding: 1.5rem;">
+                            <div class="input-group">
+                                <label>Email Address</label>
+                                <input type="email" id="inviteEmail" placeholder="user@tothenew.com">
+                            </div>
+                            <div class="input-group">
+                                <label>Account Role</label>
+                                <select id="inviteRole">
+                                    <option value="user">Standard User</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" style="width:100%;" onclick="inviteUser()">Send
+                                Invitation</button>
+                            <div id="inviteStatus" style="margin-top:10px; font-size:0.8rem;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUDIT VIEW -->
+        <div id="view-audit" class="view-panel">
+            <div class="card">
+                <div class="card-header">
+                    <div class="search-box">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" id="logSearch" placeholder="Search logs..." oninput="filterLogs()">
+                    </div>
+                    <select id="logActionFilter" onchange="filterLogs()"
+                        style="border: 1px solid var(--border); border-radius:8px; padding:8px 12px; background:var(--bg-input); color:var(--text-main); font-size:0.85rem; margin-right: auto; margin-left:1rem;">
+                        <option value="">All Action Types</option>
+                        <option value="LOGIN|LOGOUT|MFA">Authentication & Security</option>
+                        <option value="ACCOUNT|CSV">Data & Account Management</option>
+                        <option value="AUTOMATION">Automation Events</option>
+                        <option value="AGENT|SETTINGS">Agent & System Settings</option>
+                    </select>
+                    <div style="display:flex; gap:8px;">
+                        <a href="/api/admin/audit_logs/export/csv" class="btn" style="font-size:0.75rem;">CSV</a>
+                        <a href="/api/admin/audit_logs/export/pdf" class="btn" style="font-size:0.75rem;">PDF</a>
+                        <button class="btn btn-primary" onclick="fetchAuditLogs()"
+                            style="font-size:0.75rem;">Refresh</button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="auditTable">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Identity</th>
+                                <th>Activity</th>
+                                <th>Source</th>
+                                <th>Metadata</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditLogsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Centralized notification system
+        window.showToast = function (message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+            toast.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span>${icon}</span>
+                    <span style="font-size:0.9rem; font-weight:500;">${message}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; padding:0 4px;">✕</button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        };
+        const showToast = window.showToast;
+
+        let allLogs = [];
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        function initAdmin() {
+            fetchAgents();
+            setInterval(fetchAgents, 15000);
+        }
+
+        // Initial fetch of DB
+
+        // SPA-style switching
+        function switchView(viewId, el) {
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+            document.getElementById('view-' + viewId).classList.add('active');
+            el.classList.add('active');
+
+            const titles = { 'agents': 'Connected Agents', 'users': 'User Management', 'audit': 'System Audit Logs' };
+            document.getElementById('viewTitle').textContent = titles[viewId];
+
+            if (viewId === 'audit') fetchAuditLogs();
+            if (viewId === 'agents') fetchAgents();
+        }
+
+        // Setup globally for fetch
+        const _fetch = window.fetch;
+        window.fetch = (url, options = {}) => {
+            const method = (options.method || 'GET').toUpperCase();
+            if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                options.headers = options.headers || {};
+                options.headers['X-CSRFToken'] = csrfToken;
+            }
+            return _fetch(url, options);
+        };
+
+        // --- Agents Logic ---
+        async function fetchAgents() {
+            const el = document.getElementById('agentsContent');
+            try {
+                const resp = await fetch('/api/agents/status');
+                const agents = await resp.json();
+                if (!agents.length) {
+                    el.innerHTML = '<div style="padding:3rem; text-align:center; color:var(--text-muted);">No agents registered.</div>';
+                    return;
+                }
+                el.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>User</th>
+                                <th>Hostname</th>
+                                <th>Last Seen</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${agents.map(a => `
+                                <tr>
+                                    <td><span class="badge" style="background:${a.online ? 'rgba(16,185,129,0.1)' : 'var(--bg-input)'}; color:${a.online ? 'var(--success)' : 'var(--text-muted)'}">${a.online ? '🟢 ONLINE' : '⚫ OFFLINE'}</span></td>
+                                    <td style="font-weight:600;">${a.username}</td>
+                                    <td>${a.hostname || '—'}</td>
+                                    <td class="log-timestamp">${a.last_seen || '—'}</td>
+                                    <td><button class="btn" style="border-color:var(--danger); color:var(--danger); padding:4px 8px; font-size:0.7rem;" onclick="removeAgent('${a.agent_id}')">Remove</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>`;
+            } catch (e) { el.innerHTML = 'Error loading agents.'; }
+        }
+
+        async function removeAgent(id) {
+            if (confirm('Revoke agent registration?')) {
+                await fetch('/api/admin/agents/delete/' + id, { method: 'POST' });
+                fetchAgents();
+            }
+        }
+
+        // --- Audit Logic ---
+        async function fetchAuditLogs() {
+            const resp = await fetch('/api/admin/audit_logs');
+            allLogs = await resp.json();
+            renderLogs(allLogs);
+        }
+
+        function renderLogs(logs) {
+            const body = document.getElementById('auditLogsBody');
+            body.innerHTML = logs.map(log => {
+                const date = new Date(log.timestamp).toLocaleString();
+                let meta = '';
+                try {
+                    const d = JSON.parse(log.details);
+                    for (const [k, v] of Object.entries(d)) meta += `<span class="tag"><b>${k}:</b> ${v}</span> `;
+                } catch (e) { meta = log.details; }
+
+                return `
+                    <tr>
+                        <td class="log-timestamp">${date}</td>
+                        <td><div class="log-identity"><div class="avatar">${log.username ? log.username.charAt(0).toUpperCase() : 'U'}</div> ${log.username}</div></td>
+                        <td><span class="badge" style="${getActionStyle(log.action)}">${log.action}</span></td>
+                        <td style="font-family:monospace; color:var(--text-muted); font-size:0.8rem;">${log.ip_address}</td>
+                        <td><div style="display:flex; flex-wrap:wrap; gap:4px;">${meta}</div></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterLogs() {
+            const searchQ = document.getElementById('logSearch').value.toLowerCase();
+            const filterVal = document.getElementById('logActionFilter').value;
+            const filterKwds = filterVal ? filterVal.split('|') : [];
+
+            const filtered = allLogs.filter(l => {
+                const u = l.username || "";
+                const a = l.action || "";
+                const ip = l.ip_address || "";
+
+                const matchesSearch = u.toLowerCase().includes(searchQ) ||
+                    a.toLowerCase().includes(searchQ) ||
+                    ip.includes(searchQ);
+
+                let matchesDrop = true;
+                if (filterKwds.length > 0) {
+                    matchesDrop = filterKwds.some(kw => a.toUpperCase().includes(kw));
+                }
+
+                return matchesSearch && matchesDrop;
+            });
+            renderLogs(filtered);
+        }
+
+        function getActionStyle(a) {
+            if (a.includes('LOGIN')) return 'background:rgba(16,185,129,0.1); color:var(--success);';
+            if (a.includes('CSV')) return 'background:rgba(59,130,246,0.1); color:var(--accent);';
+            return 'background:var(--bg-input); color:var(--text-muted);';
+        }
+
+        // --- User Actions ---
+        window.inviteUser = async () => {
+            const email = document.getElementById('inviteEmail').value;
+            const role = document.getElementById('inviteRole').value;
+            const status = document.getElementById('inviteStatus');
+            status.textContent = 'Sending...';
+            const r = await fetch('/admin/invite_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, role })
+            });
+            const d = await r.json();
+            status.textContent = d.success ? '✅ Sent' : '❌ ' + d.error;
+        };
+
+        window.resetMfa = async (id, name) => {
+            if (confirm('Reset 2FA for ' + name + '?')) {
+                try {
+                    const r = await fetch('/admin/reset_mfa/' + id, { method: 'POST' });
+                    const d = await r.json();
+                    if (d.success) {
+                        showToast(d.message, 'success');
+                    } else {
+                        showToast(d.error || 'Failed to reset 2FA', 'error');
+                    }
+                } catch (err) {
+                    showToast('Request failed: ' + err, 'error');
+                }
+            }
+        };
+
+        window.downloadAnnualReport = () => {
+            // Default start = first day of current month, end = today
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            document.getElementById('reportStartDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('reportEndDate').value = now.toISOString().split('T')[0];
+            document.getElementById('reportModal').style.display = 'flex';
+        };
+
+        window.closeReportModal = () => {
+            document.getElementById('reportModal').style.display = 'none';
+        };
+
+        window.triggerReportDownload = (fmt) => {
+            const start = document.getElementById('reportStartDate').value;
+            const end = document.getElementById('reportEndDate').value;
+            let url = `/api/admin/audit/backup_history_report/${fmt}`;
+            if (start && end) url += `?start=${start}&end=${end}`;
+            window.location.href = url;
+            closeReportModal();
+        };
+
+        // document.addEventListener('DOMContentLoaded', () => { fetchAgents(); setInterval(fetchAgents, 15000); });
+    </script>
+
+    <!-- Report Picker Modal -->
+    <div id="reportModal"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
+        <div
+            style="background:#1e293b; border:1px solid #334155; border-radius:16px; padding:2rem; width:400px; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+            <h2 style="margin:0 0 1.5rem; font-size:1.1rem; color:#fff;">📊 Download Backup Report</h2>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; display:block; margin-bottom:0.4rem;">Start
+                        Date</label>
+                    <input type="date" id="reportStartDate"
+                        style="width:100%; padding:0.6rem; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:8px; outline:none; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; color:#94a3b8; display:block; margin-bottom:0.4rem;">End
+                        Date</label>
+                    <input type="date" id="reportEndDate"
+                        style="width:100%; padding:0.6rem; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:8px; outline:none; box-sizing:border-box;">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:0.75rem;">
+                <button onclick="triggerReportDownload('pdf')" class="btn"
+                    style="flex:1; padding:0.75rem; background:#6366f1; color:#fff; border-color:#6366f1; font-size:0.9rem;">📄
+                    Download PDF</button>
+                <button onclick="triggerReportDownload('csv')" class="btn btn-outline"
+                    style="flex:1; padding:0.75rem; font-size:0.9rem;">📊 Download CSV</button>
+            </div>
+            <button onclick="closeReportModal()"
+                style="margin-top:1rem; width:100%; padding:0.5rem; background:transparent; border:none; color:#64748b; cursor:pointer; font-size:0.85rem;">Cancel</button>
+        </div>
+    </div>
+
+</body>
+
+</html>

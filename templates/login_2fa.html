@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2FA Verification - Takeout Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f1115;
+            --bg-panel: #181b21;
+            --bg-input: #22262f;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --error: #ef4444;
+            --border: #2a2f3a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: url('/static/backdrop.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .login-box {
+            background: rgba(24, 27, 33, 0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-align: center;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        input {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            letter-spacing: 0.5rem;
+            text-align: center;
+            outline: none;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .error {
+            color: var(--error);
+            font-size: 0.85rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-box">
+        <div
+            style="text-align:center; margin-bottom:1.5rem; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:0.5rem;">
+            <img src="/static/logo.png" alt="TO THE NEW Logo"
+                style="height:56px; width:auto; max-width:160px; object-fit:contain;"
+                onerror="this.style.display='none'">
+            <h1
+                style="font-size:1.8rem; font-weight:700; color:#fff; margin:0; letter-spacing:1px; white-space:nowrap;">
+                TO THE NEW</h1>
+        </div>
+        <h2>2FA Verification</h2>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="/login/2fa" class="form-group">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label>Enter the 6-digit code from your authenticator app</label>
+                <input type="text" name="code" maxlength="6" pattern="\d{6}" inputmode="numeric" required autofocus
+                    autocomplete="one-time-code">
+            </div>
+            <button type="submit" class="btn">Verify &amp; Sign In</button>
+        </form>
+
+        <div style="margin-top: 2rem; text-align: center;">
+            <a href="/logout" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">Cancel and go
+                back</a>
+        </div>
+    </div>
+</body>
+
+</html>

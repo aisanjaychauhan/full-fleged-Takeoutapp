@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Takeout Agent — Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0c10;
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+        }
+
+        .card {
+            background: #11141b;
+            border: 1px solid #242936;
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .logo h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .logo p {
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 1.75rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.82rem;
+            color: #94a3b8;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            background: #1b1f2a;
+            border: 1px solid #242936;
+            color: #f1f5f9;
+            border-radius: 8px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.9rem;
+            outline: none;
+            margin-bottom: 1rem;
+            transition: border-color .2s;
+        }
+
+        input:focus {
+            border-color: #6366f1;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            min-height: 1.2rem;
+        }
+
+        .status.ok {
+            color: #34d399;
+        }
+
+        .status.err {
+            color: #f87171;
+        }
+
+        .steps {
+            background: #1b1f2a;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            font-size: 0.82rem;
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+            line-height: 1.7;
+        }
+
+        .steps strong {
+            color: #f1f5f9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="logo">
+            <div class="logo-icon">🤖</div>
+            <div>
+                <h1>Takeout Agent</h1>
+                <p>First-time setup</p>
+            </div>
+        </div>
+
+        <h2>Connect to Central Server</h2>
+        <p class="subtitle">Your admin will give you the server URL and an invite token.</p>
+
+        <div class="steps">
+            <strong>How to get started:</strong><br>
+            1. Ask your admin to send you an <strong>invite email</strong><br>
+            2. Copy the <strong>invite token</strong> from the email<br>
+            3. Enter the <strong>server URL</strong> and token below<br>
+            4. Click <strong>Connect</strong>
+        </div>
+
+        <label>Central Server URL</label>
+        <input type="url" id="serverUrl" placeholder="http://192.168.1.10:5005">
+
+        <label>Invite Token</label>
+        <input type="text" id="inviteToken" placeholder="Paste token from invite email">
+
+        <button class="btn" id="connectBtn" onclick="connect()">🔗 Connect &amp; Register</button>
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        async function connect() {
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            const inviteToken = document.getElementById('inviteToken').value.trim();
+            const statusEl = document.getElementById('status');
+            const btn = document.getElementById('connectBtn');
+
+            if (!serverUrl || !inviteToken) {
+                statusEl.className = 'status err';
+                statusEl.textContent = '❌ Both fields are required.';
+                return;
+            }
+
+            btn.disabled = true; btn.textContent = 'Connecting...';
+            statusEl.className = 'status'; statusEl.textContent = 'Registering with server...';
+
+            try {
+                const resp = await fetch('/api/agent/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ server_url: serverUrl, invite_token: inviteToken })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    statusEl.className = 'status ok';
+                    statusEl.textContent = `✅ Connected as ${data.username}! Redirecting...`;
+                    setTimeout(() => window.location.href = '/dashboard', 1500);
+                } else {
+                    statusEl.className = 'status err';
+                    statusEl.textContent = '❌ ' + (data.error || 'Connection failed');
+                    btn.disabled = false; btn.textContent = '🔗 Connect & Register';
+                }
+            } catch (e) {
+                statusEl.className = 'status err';
+                statusEl.textContent = '❌ Network error: ' + e.message;
+                btn.disabled = false; btn.textContent = '🔗 Connect & Register';
+            }
+        }
+
+        // Allow Enter key
+        document.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
+    </script>
+</body>
+
+</html>

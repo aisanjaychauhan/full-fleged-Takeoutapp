@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Logs - {{ target_user }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f1115;
+            --bg-panel: #181b21;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --border: #2a2f3a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: var(--bg-panel);
+            color: var(--text-muted);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-panel);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+            height: calc(100vh - 150px);
+        }
+
+        .list-group {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .log-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem;
+            text-align: left;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+
+        .log-btn:hover,
+        .log-btn.active {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .viewer {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #10b981;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Admin Log Viewer <span class="badge">{{ target_user }}</span></h1>
+        <a href="/admin" class="btn-outline">← Back to Dashboard</a>
+    </div>
+
+    <div class="layout">
+        <div class="list-group" id="fileList">
+            <button class="log-btn"
+                style="border-color: #10b981; color: #10b981; font-weight: 600; margin-bottom: 0.5rem;"
+                onclick="loadActivityAudit(this)">
+                📋 View Activity Audit
+            </button>
+            <div
+                style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; padding-left: 0.5rem; letter-spacing: 0.05em;">
+                Historical Logs</div>
+            {% if not logs %}
+            <div style="color:var(--text-muted); font-size:0.9rem; text-align:center; margin-top:1rem;">
+                No execution logs found for this user.
+            </div>
+            {% endif %}
+
+            {% for log in logs %}
+            <button class="log-btn" onclick="loadLog('{{ log }}', this)">
+                {{ log.replace('run_' + target_user + '_', '').replace('run_', '').replace('.log', '') }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="viewer" id="logContent">
+            > Select a log file from the left to view output trace...
+        </div>
+    </div>
+
+    <script>
+        function loadActivityAudit(btnElem) {
+            document.querySelectorAll('.log-btn').forEach(b => b.classList.remove('active'));
+            if (btnElem) btnElem.classList.add('active');
+
+            const viewer = document.getElementById('logContent');
+            viewer.textContent = "> Fetching system audit records for {{ target_user }}...\n";
+
+            fetch('/api/admin/audit_logs/{{ target_user }}')
+                .then(r => r.json())
+                .then(logs => {
+                    if (logs.length === 0) {
+                        viewer.textContent = "> No system audit records found for this user.";
+                        return;
+                    }
+                    let html = `<div style="color: #94a3b8; margin-bottom: 1rem; border-bottom: 1px solid #2a2f3a; padding-bottom: 0.5rem;">System Audit Trail (Latest 500 actions)</div>`;
+                    logs.forEach(log => {
+                        const date = new Date(log.timestamp).toLocaleString();
+                        html += `<div style="margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px border-style: dashed; border-color: #2a2f3a;">
+                            <span style="color: #6366f1; font-weight: 600;">[${date}]</span> 
+                            <span style="color: #10b981;">${log.action}</span>: 
+                            <span style="color: #e2e8f0;">${log.details}</span>
+                        </div>`;
+                    });
+                    viewer.innerHTML = html;
+                    viewer.scrollTop = 0;
+                })
+                .catch(err => {
+                    viewer.textContent = "> Failed to fetch audit logs.";
+                });
+        }
+
+        function loadLog(filename, btnElem) {
+            document.querySelectorAll('.log-btn').forEach(b => b.classList.remove('active'));
+            if (btnElem) btnElem.classList.add('active');
+
+            const viewer = document.getElementById('logContent');
+            viewer.innerHTML = ""; // Clear for textContent
+            viewer.textContent = "> Loading " + filename + "...\n";
+
+            fetch('/api/history/' + filename)
+                .then(r => r.text())
+                .then(text => {
+                    viewer.textContent = text;
+                    viewer.scrollTop = viewer.scrollHeight;
+                })
+                .catch(err => {
+                    viewer.textContent = "> Failed to fetch log contents.";
+                });
+        }
+    </script>
+</body>
+
+</html>

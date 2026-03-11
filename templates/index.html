@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Takeout Dashboard with Live View</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root,
+        [data-theme="midnight"] {
+            --bg-dark: #0f1115;
+            --bg-panel: #181b21;
+            --bg-input: #22262f;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #2a2f3a;
+        }
+
+        [data-theme="light"] {
+            --bg-dark: #f8fafc;
+            --bg-panel: #ffffff;
+            --bg-input: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #059669;
+            --error: #dc2626;
+            --border: #e2e8f0;
+        }
+
+        [data-theme="light"] header,
+        [data-theme="light"] .header {
+            background: #ffffff !important;
+            border-bottom-color: #e2e8f0 !important;
+        }
+
+        [data-theme="light"] .brand-logo h1,
+        [data-theme="light"] .sidebar-logo,
+        [data-theme="light"] h1,
+        [data-theme="light"] .header h1,
+        [data-theme="light"] .nav-item {
+            color: #0f172a !important;
+        }
+
+        [data-theme="hacker"] {
+            --bg-dark: #000000;
+            --bg-panel: #0a0a0a;
+            --bg-input: #111111;
+            --text-main: #00ff00;
+            --text-muted: #008f11;
+            --accent: #00ff41;
+            --accent-hover: #008f11;
+            --success: #00ff00;
+            --error: #ff0000;
+            --border: #003b00;
+        }
+
+        [data-theme="ocean"] {
+            --bg-dark: #082f49;
+            --bg-panel: #0c4a6e;
+            --bg-input: #075985;
+            --text-main: #f0f9ff;
+            --text-muted: #7dd3fc;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --success: #2dd4bf;
+            --error: #fb7185;
+            --border: #0ea5e9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 1.1rem;
+            /* Increased from default */
+        }
+
+        [data-theme="light"] body {
+            background-image: none;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-logo img {
+            height: 32px;
+            width: auto;
+        }
+
+        .brand-logo h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .profile-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 4px 12px;
+            padding-right: 4px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .profile-trigger:hover {
+            border-color: var(--accent);
+            background: #2a2f3a;
+        }
+
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            text-transform: uppercase;
+        }
+
+        .profile-avatar img,
+        .avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Dropdown Styles */
+        .profile-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 320px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            padding: 1.5rem;
+            display: none;
+            flex-direction: column;
+            gap: 1.25rem;
+            z-index: 1001;
+            animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .profile-dropdown.show {
+            display: flex;
+        }
+
+        .user-info {
+            text-align: center;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .user-info .avatar-large {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: var(--bg-input);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-info h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .user-info p {
+            margin: 4px 0 0;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            width: 100%;
+            padding: 1.5rem;
+            gap: 1.5rem;
+            min-height: 0;
+        }
+
+        .main-pane {
+            flex: 2.5;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .side-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-height: 0;
+        }
+
+        .panel-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #181b21;
+        }
+
+        .card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            /* Increased font size */
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 1.05rem;
+            /* Increased font size */
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-input);
+        }
+
+        .video-container {
+            flex: 1;
+            background: var(--bg-input);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .video-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .video-placeholder {
+            color: var(--text-muted);
+            font-size: 1rem;
+            position: absolute;
+        }
+
+        .logs-container {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #a3a3a3;
+            overflow-y: auto;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .log-line {
+            line-height: 1.4;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .log-line.error {
+            color: var(--error);
+        }
+
+        .log-line.success {
+            color: var(--success);
+        }
+
+        .log-line.highlight {
+            color: #facc15;
+        }
+
+        /* Toggle Switch Styles */
+        .switch input:checked+.slider {
+            background-color: var(--success);
+        }
+
+        .switch input:checked+.slider:before {
+            transform: translateX(18px);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 280px;
+            max-width: 400px;
+            background: var(--bg-panel);
+            color: var(--text-main);
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            animation: slideInRight 0.3s ease-out;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--error);
+        }
+
+        .toast.cleanup {
+            animation: fadeOut 0.3s forwards;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+    </style>
+    <!-- CSRF token for JS API calls -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        // Global CSRF interceptor — automatically adds X-CSRFToken to all fetch() POST/PUT/PATCH/DELETE calls
+        (function () {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const _fetch = window.fetch;
+            window.fetch = function (url, options = {}) {
+                const method = (options.method || 'GET').toUpperCase();
+                if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    if (options.headers instanceof Headers) {
+                        options.headers.set('X-CSRFToken', csrfToken);
+                    } else {
+                        options.headers['X-CSRFToken'] = csrfToken;
+                    }
+                }
+                return _fetch(url, options);
+            };
+        })();
+    </script>
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <!-- History Modal -->
+    <div id="historyModal"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:999; align-items:center; justify-content:center; padding: 2rem;">
+        <div
+            style="background:var(--bg-panel); width:100%; max-width:900px; height:80vh; border:1px solid var(--border); border-radius:12px; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+            <div class="panel-header" style="background:#181b21;">
+                <span>Automation Execution History</span>
+                <button onclick="closeHistory()" class="btn-outline"
+                    style="border:none; padding:4px; font-size:1.2rem; cursor:pointer;">✕</button>
+            </div>
+            <div style="display:flex; flex:1; overflow:hidden;">
+                <!-- Sidebar: List of files -->
+                <div id="historyList"
+                    style="width:300px; border-right:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem; padding:1rem; background: var(--bg-input);">
+                    <div style="color:var(--text-muted); padding:1rem; font-size:0.9rem;">Loading history...</div>
+                </div>
+                <!-- Main: Log Content -->
+                <div style="flex:1; display:flex; flex-direction:column; background:#050505;">
+                    <pre id="historyView"
+                        style="flex:1; margin:0; padding:1.5rem; overflow:auto; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.5; color:#d1d5db; white-space:pre-wrap;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Add Account Modal -->
+    <div id="addAccountModal"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:999; align-items:center; justify-content:center; padding: 2rem;">
+        <div
+            style="background:var(--bg-panel); width:100%; max-width:500px; border:1px solid var(--border); border-radius:12px; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+            <div class="panel-header" style="background:#181b21;">
+                <span>Add Target Account</span>
+                <button onclick="closeAddAccountModal()" class="btn-outline"
+                    style="border:none; padding:4px; font-size:1.2rem; cursor:pointer;">✕</button>
+            </div>
+            <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group">
+                    <label>Gmail Email</label>
+                    <input type="email" id="manual_email" placeholder="example@gmail.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="manual_password" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label>8-Digit Backup Codes (Optional)</label>
+                    <input type="text" id="manual_backup" placeholder="12345678, 87654321">
+                    <small style="font-size: 0.75rem; color: var(--text-muted);">Separate multiple codes with
+                        commas.</small>
+                </div>
+                <button id="manualSubmitBtn" class="btn" onclick="submitAddAccount()"
+                    style="margin-top: 0.5rem; width: 100%;">Save Account</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="brand-logo">
+            <img src="/static/logo.png" alt="TO THE NEW" onerror="this.style.display='none'">
+            <h1>TO THE NEW</h1>
+        </div>
+        <div style="display:flex; align-items:center; gap:1.5rem;">
+            <div
+                style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; text-align:right;">
+                Google Takeout Tool
+                <div style="font-size:0.85rem; font-weight:600; color:var(--accent); text-transform:none;">by Sanjay
+                    Chauhan</div>
+            </div>
+
+            <div class="profile-trigger" id="profileTrigger">
+                <span style="font-size:0.85rem; color:var(--text-muted);">{{ session.username[:20] }}{% if
+                    session.username|length > 20 %}...{% endif %}</span>
+                <div class="profile-avatar">{{ session.username[0] }}</div>
+
+                <!-- Dropdown -->
+                <div class="profile-dropdown" id="profileDropdown"
+                    style="width: 340px; padding: 0; background: var(--bg-panel); overflow: hidden;">
+                    <!-- User Header -->
+                    <div
+                        style="padding: 1.5rem; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); text-align: center;">
+                        <input type="file" id="avatarInput" style="display: none;" accept="image/*"
+                            onchange="uploadAvatar()">
+                        <div class="avatar-large" id="avatarLarge"
+                            onclick="document.getElementById('avatarInput').click()">
+                            {{ session.username[0] }}
+                        </div>
+                        <h3 style="font-size: 1rem; margin-bottom: 0.25rem;">{{ session.username }}</h3>
+                        <p
+                            style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">
+                            {{ session.role | upper }} ACCOUNT</p>
+                    </div>
+
+                    <div
+                        style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1.5rem; max-height: 70vh; overflow-y: auto;">
+                        <!-- Appearance Section -->
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div
+                                style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">
+                                <span>🎨</span> Appearance
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.9rem;">Theme Overlay</span>
+                                <select id="settingTheme" onchange="changeTheme(this.value)"
+                                    style="background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; outline: none; width: 120px;">
+                                    <option value="midnight">Midnight</option>
+                                    <option value="light">Light</option>
+                                    <option value="hacker">Hacker</option>
+                                    <option value="ocean">Ocean</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.9rem;">Auto-Show Browser</span>
+                                <label class="switch" style="width: 36px; height: 18px;">
+                                    <input type="checkbox" id="settingShowBrowser" onchange="saveSettings()">
+                                    <span class="slider" style="border-radius: 18px;"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- System Section -->
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div
+                                style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">
+                                <span>⚙️</span> System & Sessions
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.9rem;">Max Concurrent</span>
+                                <input type="number" id="settingConcurrentSessions" min="1" max="10" value="3"
+                                    onchange="saveSettings()"
+                                    style="width: 50px; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); padding: 4px; border-radius: 6px; font-size: 0.85rem; text-align: center;">
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.9rem;">Automation Speed</span>
+                                <select id="settingSpeed" onchange="saveSettings()"
+                                    style="background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; outline: none; width: 100px;">
+                                    <option value="safe">Safe</option>
+                                    <option value="fast">Fast</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.9rem;">Download Path</span>
+                                    <button onclick="loadDrives()" class="btn btn-outline"
+                                        style="padding: 2px 8px; font-size: 0.7rem; height: auto;">...</button>
+                                </div>
+                                <div style="position: relative;">
+                                    <input type="text" id="settingDownloadPath" list="driveList"
+                                        placeholder="C:\Downloads..." onchange="saveSettings()"
+                                        style="width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; color: var(--text-muted);">
+                                    <span onclick="loadDrives()"
+                                        style="position: absolute; right: 10px; top: 8px; font-size: 0.8rem; opacity: 0.5; cursor: pointer;">📁</span>
+                                    <datalist id="driveList"></datalist>
+                                </div>
+                            </div>
+                            <!-- Notifications Toggle -->
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                                <span style="font-size: 0.9rem;">Email Notifications</span>
+                                <label class="switch" style="width: 36px; height: 18px;">
+                                    <input type="checkbox" id="settingNotifications" onchange="saveSettings()">
+                                    <span class="slider" style="border-radius: 18px;"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Security Section -->
+                        <div
+                            style="display: flex; flex-direction: column; gap: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div
+                                    style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">
+                                    <span>🛡️</span> Security
+                                </div>
+                                <div id="mfaBadgeContainer" style="display: flex; align-items: center; gap: 0.4rem;">
+                                    <span id="mfaBadge"
+                                        style="font-size: 0.75rem; color: var(--success); font-weight: 600;">●
+                                        Enabled</span>
+                                </div>
+                            </div>
+                            <button id="mfaActionBtn" class="btn btn-outline"
+                                style="width: 100%; padding: 0.6rem; font-size: 0.85rem; color: var(--error); border-color: rgba(239, 68, 68, 0.2);"
+                                onclick="toggleMFASetup()">Disable 2FA</button>
+                            <a href="/change_password" class="btn btn-outline"
+                                style="text-decoration: none; text-align: center; padding: 0.6rem; font-size: 0.85rem; border-radius: 8px;">Change
+                                Password</a>
+                        </div>
+                    </div>
+
+                    <!-- Footer Section -->
+                    <div
+                        style="padding: 1rem; background: var(--bg-input); border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1.2fr; gap: 0.75rem;">
+                        {% if session.role == 'admin' %}
+                        <a href="/admin" class="btn btn-primary"
+                            style="text-decoration: none; text-align: center; font-size: 0.85rem; padding: 0.6rem; border-radius: 10px; font-weight: 600;">
+                            <i class="fas fa-tools"></i> Admin Hub
+                        </a>
+                        {% endif %}
+                        <a href="/logout" class="btn {% if session.role != 'admin' %}span-2{% endif %}"
+                            style="text-decoration: none; text-align: center; font-size: 0.85rem; padding: 0.6rem; border-radius: 10px; background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.1); font-weight: 600;">
+                            🚪 Sign Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Main Video Pane -->
+        <div class="main-pane">
+            <div class="panel-header" style="justify-content: flex-start; gap: 1rem;">
+                <button id="tab-video" class="btn btn-outline"
+                    style="border-color: var(--accent); color: white;">Browser
+                    Stream</button>
+                <button id="tab-db" class="btn btn-outline">Target Accounts</button>
+            </div>
+
+            <div id="videoView" class="video-container">
+                <div class="video-placeholder" id="videoPlaceholder">Awaiting Automation Stream...</div>
+                <img id="liveStream" src="" alt="" style="display:none;">
+            </div>
+
+            <div id="dbView"
+                style="display:none; flex: 1; background: var(--bg-dark); overflow: hidden; flex-direction: column;">
+                <!-- Status Counters -->
+                <div
+                    style="display: flex; gap: 1rem; padding: 1rem; background: var(--bg-input); border-bottom: 1px solid var(--border);">
+                    <div
+                        style="flex: 1; background: var(--bg-panel); border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Create
+                            SUCCESS</div>
+                        <div id="count-create-success"
+                            style="font-size: 1.25rem; font-weight: 700; color: var(--success);">0</div>
+                    </div>
+                    <div
+                        style="flex: 1; background: var(--bg-panel); border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Create
+                            FAILED</div>
+                        <div id="count-create-failed"
+                            style="font-size: 1.25rem; font-weight: 700; color: var(--error);">0</div>
+                    </div>
+                    <div
+                        style="flex: 1; background: var(--bg-panel); border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Download
+                            SUCCESS</div>
+                        <div id="count-download-success"
+                            style="font-size: 1.25rem; font-weight: 700; color: var(--success);">0</div>
+                    </div>
+                    <div
+                        style="flex: 1; background: var(--bg-panel); border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Download
+                            FAILED</div>
+                        <div id="count-download-failed"
+                            style="font-size: 1.25rem; font-weight: 700; color: var(--error);">0</div>
+                    </div>
+                </div>
+
+                <!-- Filters & Search -->
+                <div
+                    style="padding: 0.75rem 1rem; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px; position: relative;">
+                        <input type="text" id="targetSearch" placeholder="Search by email..."
+                            oninput="filterTargetTable()"
+                            style="width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: #fff; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem;">
+                    </div>
+                    <select id="filterStatus" onchange="filterTargetTable()"
+                        style="background: var(--bg-input); border: 1px solid var(--border); color: #fff; padding: 0.5rem; border-radius: 6px; font-size: 0.85rem;">
+                        <option value="all">All Statuses</option>
+                        <option value="success">Success Only</option>
+                        <option value="failed">Failed Only</option>
+                        <option value="pending">Pending Only</option>
+                    </select>
+                    <button id="bulkDeleteBtn" class="btn btn-outline" onclick="deleteSelectedAccounts()" disabled
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem; border-color: var(--error); color: var(--error); opacity: 0.5;">
+                        Delete Selected (0)
+                    </button>
+                    <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                        <button class="btn btn-outline" onclick="openAddAccountModal()"
+                            style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: var(--accent); color: var(--accent);">+
+                            Add Account</button>
+                        <button class="btn btn-outline" onclick="window.location.href='/api/export/report'"
+                            style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Export CSV</button>
+                        <button class="btn btn-outline" onclick="fetchDbTable()" title="Refresh Data"
+                            style="padding: 0.4rem; font-size: 1rem; border-color: var(--border); color: var(--text-muted); display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 4v6h-6"></path>
+                                <path d="M1 20v-6h6"></path>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="flex: 1; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead
+                            style="position: sticky; top: 0; background: #111; z-index: 10; border-bottom: 2px solid var(--border);">
+                            <tr>
+                                <th style="padding: 0.75rem; text-align: left; width: 40px;">
+                                    <input type="checkbox" id="selectAllTargets" onclick="toggleSelectAll(this)">
+                                </th>
+                                <th style="padding: 0.75rem; text-align: left;">Email</th>
+                                <th style="padding: 0.75rem; text-align: left;">Backup Codes</th>
+                                <th style="padding: 0.75rem; text-align: left;">Create Status</th>
+                                <th style="padding: 0.75rem; text-align: left;">Download Status</th>
+                                <th style="padding: 0.75rem; text-align: left;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dbTableBody">
+                            <!-- Rows loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-pane">
+            <!-- Data Source Card -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                    <h2>Target Accounts Data Source</h2>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div
+                        style="margin-bottom: 1.5rem; display: flex; gap: 1rem; padding: 0.5rem; background: var(--bg-panel); border-radius: 8px;">
+                        <label
+                            style="flex: 1; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem;">
+                            <input type="radio" name="dataSource" value="csv" checked onchange="toggleDataSource()">
+                            <span style="font-size: 0.9rem;">Local CSV Database</span>
+                        </label>
+                        <label
+                            style="flex: 1; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem;">
+                            <input type="radio" name="dataSource" value="sheet" onchange="toggleDataSource()">
+                            <span style="font-size: 0.9rem;">Google Sheets</span>
+                        </label>
+                    </div>
+
+                    <div id="csvFormContainer">
+                        <form id="csvUploadForm" enctype="multipart/form-data"
+                            style="display: flex; flex-direction: column; gap: 1rem;">
+                            <p style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.4;">
+                                Upload a CSV with <code>Email</code>, <code>Password</code>, <code>BackupCodes</code>.
+                            </p>
+                            <div style="display: flex; align-items: stretch; gap: 0.75rem;">
+                                <input type="file" id="csv_file" accept=".csv" required
+                                    style="flex: 1; font-size: 0.9rem; padding: 0.5rem; background: var(--bg-input); border-radius: 8px;">
+                                <button type="submit" id="csvSubmitBtn" class="btn btn-outline"
+                                    style="white-space: nowrap; padding: 0 1rem;">Import</button>
+                            </div>
+                            <div id="csv_upload_status" style="font-size: 0.9rem; color: var(--text-muted);">
+                                Total loaded: <span id="db_count"
+                                    style="color: var(--accent); font-weight: 600;">...</span> accounts
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="sheetsFormContainer" style="display: none;">
+                        <form id="settingsForm" class="form-group" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label>Spreadsheet ID</label>
+                                <input type="text" id="spreadsheet_id" value="" required placeholder="1CJo5...2HcQ">
+                            </div>
+                            <div class="form-group">
+                                <label>Tab Name</label>
+                                <input type="text" id="sheet_name" value="" required placeholder="TakeoutCredentials">
+                            </div>
+                            <div class="form-group">
+                                <label>Google Cloud Service JSON File</label>
+                                <input type="file" id="credentials_file" accept=".json">
+                                <div id="cred_status"
+                                    style="font-size: 0.8rem; margin-top: 0.25rem; color: var(--text-muted);">...</div>
+                            </div>
+                            <button type="submit" class="btn btn-outline" style="margin-top:0.5rem; width:100%;">Save
+                                Google Sheets Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Automation Control Card -->
+            <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <div class="card-header">
+                    <h2>Automation Control</h2>
+                </div>
+                <div
+                    style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; flex: 1; min-height: 0;">
+
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                        <div class="input-group">
+                            <label>Browser Type</label>
+                            <select id="browserType"
+                                style="width:100%; padding: 0.75rem; border-radius: 8px; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); outline: none;">
+                                <option value="chrome">🌐 Google Chrome</option>
+                                <option value="firefox">🦊 Mozilla Firefox</option>
+                                <option value="edge">🌐 Microsoft Edge</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="input-group">
+                            <label>Run Mode</label>
+                            <select id="runMode" onchange="toggleDataSource()"
+                                style="width:100%; padding: 0.75rem; border-radius: 8px; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); outline: none;">
+                                <option value="create">📂 Create Backups</option>
+                                <option value="download">📥 Download Backups</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Execution Target</label>
+                            <select id="executionTarget"
+                                style="width:100%; padding: 0.75rem; border-radius: 8px; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); outline: none;">
+                                <option value="local">🖥️ This Server (Headless)</option>
+                                <!-- Agents will be loaded here -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button id="startBtn" class="btn"
+                            style="flex: 2; padding: 1rem; font-size: 0.95rem; background: #10b981;">
+                            <span id="startBtnIcon" style="display: flex; align-items: center; margin-right: 0.5rem;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </span>
+                            <span id="startBtnText">Start Automation</span>
+                        </button>
+                        <button id="pauseBtn" class="btn" disabled
+                            style="flex: 1; padding: 1rem; font-size: 0.95rem; background: #f59e0b; color: white;">Pause</button>
+                        <button id="stopBtn" class="btn"
+                            style="flex: 1; padding: 1rem; font-size: 0.95rem; background: #ef4444;">Stop</button>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button id="showBrowserBtn" class="btn btn-outline" onclick="showBrowser()"
+                            style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-color: #3b82f6; color: #60a5fa;">👁️
+                            Show Browser</button>
+                        <button id="hideBrowserBtn" class="btn btn-outline" onclick="hideBrowser()"
+                            style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-color: #64748b; color: #94a3b8;">👻
+                            Hide Browser</button>
+                    </div>
+
+                    <!-- Terminal output -->
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                            <strong style="color: #fff; font-size: 1.1rem;">Action Logs</strong>
+                            <div style="display: flex; gap: 0.4rem;">
+                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"
+                                    onclick="openHistory()">History</button>
+                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"
+                                    onclick="window.location.href='/api/export/logs?session_id=' + window.sessionId">Export</button>
+                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"
+                                    onclick="clearLogs()">Clear</button>
+                            </div>
+                        </div>
+                        <div class="logs-container" id="terminal"
+                            style="flex: 1; background: #000; border-radius: 8px; padding: 0.75rem; font-family: monospace; overflow-y: auto; font-size: 0.85rem; color: #33ff33; border: 1px solid var(--border);">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Centralized notification system
+            window.showToast = function (message, type = 'success') {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+                toast.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span>${icon}</span>
+                    <span style="font-size:0.9rem; font-weight:500;">${message}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; padding:0 4px;">✕</button>
+            `;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.classList.add('removing');
+                    setTimeout(() => toast.remove(), 400);
+                }, 4000);
+            };
+            const showToast = window.showToast;
+
+            window.sessionId = sessionStorage.getItem('takeout_session_id');
+            if (!window.sessionId) {
+                window.sessionId = "sess_" + Math.random().toString(36).substring(2, 15);
+                sessionStorage.setItem('takeout_session_id', window.sessionId);
+            }
+
+            // Debug: Catch ALL JS errors and show them visibly on page
+            window.onerror = function (msg, src, line, col, err) {
+                const banner = document.createElement('div');
+                banner.style = 'position:fixed;top:0;left:0;right:0;background:red;color:white;z-index:99999;padding:10px;font-size:13px;font-family:monospace;';
+                banner.textContent = '❌ JS ERROR: ' + msg + ' | Line: ' + line + ' | File: ' + src;
+                document.body.appendChild(banner);
+                setTimeout(() => banner.remove(), 15000);
+                return false;
+            };
+
+            const terminal = document.getElementById('terminal');
+
+            // Profile Dropdown Toggle
+            const profileTrigger = document.getElementById('profileTrigger');
+            const profileDropdown = document.getElementById('profileDropdown');
+
+            profileTrigger.addEventListener('click', (e) => {
+                // Prevent event from bubbling up to document
+                if (e.target.closest('.profile-dropdown')) return;
+                profileDropdown.classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!profileTrigger.contains(e.target)) {
+                    profileDropdown.classList.remove('show');
+                }
+            });
+            const liveStream = document.getElementById('liveStream');
+            const videoPlaceholder = document.getElementById('videoPlaceholder');
+
+            function appendLog(text) {
+                const div = document.createElement('div');
+                div.className = 'log-line';
+                if (text.includes('✅')) div.classList.add('success');
+                else if (text.includes('❌') || text.includes('⚠️')) div.classList.add('error');
+                else if (text.includes('===')) div.classList.add('highlight');
+                div.textContent = text;
+                terminal.appendChild(div);
+                terminal.scrollTop = terminal.scrollHeight;
+
+                if (text.includes('=== All Tasks Finished ===') || text.includes('🛑 Execution aborted')) {
+                    if (typeof setRunningState === 'function') setRunningState(false);
+                }
+            }
+
+            function clearLogs() { terminal.innerHTML = ""; }
+
+            function openHistory() {
+                document.getElementById('historyModal').style.display = 'flex';
+                fetch('/api/history').then(r => r.json()).then(files => {
+                    const list = document.getElementById('historyList');
+                    list.innerHTML = '';
+                    if (files.length === 0) {
+                        list.innerHTML = '<div style="color:var(--text-muted); padding:1rem; font-size:0.9rem;">No history found.</div>';
+                        return;
+                    }
+                    files.forEach(f => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-outline';
+                        btn.style.textAlign = 'left';
+                        btn.style.fontSize = '0.85rem';
+                        btn.style.padding = '0.75rem';
+                        btn.style.borderRadius = '6px';
+                        btn.style.display = 'flex';
+                        btn.style.alignItems = 'center';
+                        btn.style.gap = '10px';
+
+                        const isArchive = f.startsWith('archive_');
+                        const icon = isArchive ? '📊' : '📝';
+                        const typeLabel = isArchive ? 'Report' : 'Log';
+                        const datePart = f.replace('run_', '').replace('archive_', '').replace('.log', '').replace('.csv', '');
+                        const label = datePart.replace(/(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/, "$1-$2-$3 $4:$5:$6");
+
+                        btn.innerHTML = `<span>${icon}</span> <span style="flex:1">${typeLabel}: ${label}</span>`;
+
+                        btn.onclick = () => {
+                            if (isArchive) {
+                                // Download CSV directly via browser
+                                window.location.href = '/api/history/' + f;
+                            } else {
+                                // Display log text in the preview area
+                                Array.from(list.children).forEach(c => c.style.borderColor = 'var(--border)');
+                                btn.style.borderColor = 'var(--accent)';
+                                document.getElementById('historyView').textContent = "Loading...";
+                                fetch('/api/history/' + f).then(r => r.text()).then(t => {
+                                    document.getElementById('historyView').textContent = t;
+                                });
+                            }
+                        };
+                        list.appendChild(btn);
+                    });
+                });
+            }
+
+            fetchDbTable();
+            fetchAgentsForDropdown();
+
+            function fetchAgentsForDropdown() {
+                fetch('/api/agents/status')
+                    .then(r => r.json())
+                    .then(agents => {
+                        const select = document.getElementById('executionTarget');
+                        if (!select) return;
+                        // Keep the "Local" option
+                        const localOpt = select.options[0];
+                        select.innerHTML = '';
+                        select.appendChild(localOpt);
+
+                        agents.filter(a => a.online).forEach(a => {
+                            const opt = document.createElement('option');
+                            opt.value = a.agent_id;
+                            opt.textContent = `🤖 Agent: ${a.username} (${a.hostname})`;
+                            select.appendChild(opt);
+                        });
+                    })
+                    .catch(err => console.error("Could not fetch agents:", err));
+            }
+
+            document.getElementById('csvUploadForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('csvSubmitBtn');
+                const fileInput = document.getElementById('csv_file');
+
+                if (fileInput.files.length === 0) return;
+
+                btn.textContent = "Uploading...";
+                btn.disabled = true;
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                fetch('/api/upload_csv', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json()).then(data => {
+                    appendLog(">> " + data.message);
+                    document.getElementById('csv_upload_status').innerHTML = `<span style='color:var(--success);'>${data.message}</span>`;
+                    fetchDbTable();
+                    btn.textContent = "Import Database";
+                    btn.disabled = false;
+                    fileInput.value = "";
+                }).catch(e => {
+                    appendLog(">> ❌ Upload Failed: " + e);
+                    btn.textContent = "Import Database";
+                    btn.disabled = false;
+                });
+            });
+
+            const startBtn = document.getElementById('startBtn');
+            const startBtnIcon = document.getElementById('startBtnIcon');
+
+            function showBrowser() {
+                window._showBrowser = true;
+                document.getElementById('showBrowserBtn').style.borderColor = '#10b981';
+                document.getElementById('showBrowserBtn').style.color = '#10b981';
+                document.getElementById('hideBrowserBtn').style.borderColor = '#64748b';
+                document.getElementById('hideBrowserBtn').style.color = '#94a3b8';
+                fetch('/api/show_browser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: window.sessionId })
+                }).then(r => r.json()).then(data => appendLog(">> " + data.message));
+            }
+
+            function hideBrowser() {
+                window._showBrowser = false;
+                document.getElementById('hideBrowserBtn').style.borderColor = '#10b981';
+                document.getElementById('hideBrowserBtn').style.color = '#10b981';
+                document.getElementById('showBrowserBtn').style.borderColor = '#3b82f6';
+                document.getElementById('showBrowserBtn').style.color = '#60a5fa';
+                fetch('/api/hide_browser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: window.sessionId })
+                }).then(r => r.json()).then(data => appendLog(">> " + data.message));
+            }
+            const startBtnText = document.getElementById('startBtnText');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const origIcon = startBtnIcon.innerHTML;
+
+            let isPaused = false;
+
+            function setRunningState(isRunning) {
+                if (isRunning) {
+                    startBtn.disabled = true;
+                    pauseBtn.disabled = false;
+                    startBtnIcon.innerHTML = '<div class="spinner"></div>';
+                    startBtnText.textContent = 'Running...';
+                } else {
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    pauseBtn.textContent = "Pause";
+                    pauseBtn.style.background = "#f59e0b";
+                    isPaused = false;
+                    startBtnIcon.innerHTML = origIcon;
+                    startBtnText.textContent = 'Start Automation';
+                }
+            }
+
+            pauseBtn.addEventListener('click', () => {
+                if (!isPaused) {
+                    fetch('/api/pause?session_id=' + window.sessionId, { method: 'POST' }).then(r => r.json()).then(d => {
+                        pauseBtn.textContent = "Resume";
+                        pauseBtn.style.background = "#3b82f6";
+                        isPaused = true;
+                    });
+                } else {
+                    fetch('/api/resume?session_id=' + window.sessionId, { method: 'POST' }).then(r => r.json()).then(d => {
+                        pauseBtn.textContent = "Pause";
+                        pauseBtn.style.background = "#f59e0b";
+                        isPaused = false;
+                    });
+                }
+            });
+
+            document.getElementById('stopBtn').addEventListener('click', () => {
+                fetch('/api/stop?session_id=' + window.sessionId, { method: 'POST' }).then(r => r.json()).then(d => {
+                    appendLog(">> " + d.message);
+                    setRunningState(false);
+                });
+            });
+
+            document.getElementById('startBtn').addEventListener('click', () => {
+                const modeItem = document.getElementById('runMode');
+                const mode = modeItem ? modeItem.value : 'create';
+                const browserType = document.getElementById('browserType').value;
+                const dataSource = document.querySelector('input[name="dataSource"]:checked').value;
+                const actionText = mode === 'create' ? "Start automated takeout sequence" : "Start automated download sequence";
+
+                if (confirm(`${actionText} using the selected data source?`)) {
+                    setRunningState(true);
+                    const showBrowserChecked = window._showBrowser !== false; // tracks Show/Hide btn
+                    fetch('/api/start?session_id=' + window.sessionId, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            mode: mode,
+                            data_source: dataSource,
+                            browser_type: browserType,
+                            showBrowser: showBrowserChecked
+                        })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            appendLog(">> " + data.message);
+                            if (data.message === "Already running" || data.message.includes("missing")) {
+                                setRunningState(false);
+                            }
+                        }).catch(() => setRunningState(false));
+                }
+            });
+
+            // Toggle Data Source UI
+            function toggleDataSource() {
+                const source = document.querySelector('input[name="dataSource"]:checked').value;
+                if (source === 'csv') {
+                    document.getElementById('csvFormContainer').style.display = 'block';
+                    document.getElementById('sheetsFormContainer').style.display = 'none';
+                } else {
+                    document.getElementById('csvFormContainer').style.display = 'none';
+                    document.getElementById('sheetsFormContainer').style.display = 'block';
+                }
+                fetchDbTable();
+            }
+
+            // Load initial settings
+            fetch('/api/settings').then(r => r.json()).then(data => {
+                if (data.spreadsheet_id) document.getElementById('spreadsheet_id').value = data.spreadsheet_id;
+                if (data.sheet_name) document.getElementById('sheet_name').value = data.sheet_name;
+                if (data.service_json_path) document.getElementById('cred_status').innerHTML = "✓ Credentials cached on server";
+            });
+
+            document.getElementById('settingsForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData();
+                formData.append('spreadsheet_id', document.getElementById('spreadsheet_id').value);
+                formData.append('sheet_name', document.getElementById('sheet_name').value);
+
+                const fileInput = document.getElementById('credentials_file');
+                if (fileInput.files.length > 0) {
+                    formData.append('credentials_file', fileInput.files[0]);
+                }
+
+                fetch('/api/save_settings', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json()).then(data => {
+                    appendLog(">> " + data.message);
+                    if (fileInput.files.length > 0) {
+                        document.getElementById('cred_status').innerHTML = "✓ Credentials updated on server";
+                        fileInput.value = "";
+                    }
+                });
+            });
+
+            // Connect SSE Logs
+            const logSource = new EventSource('/api/logs/stream?session_id=' + window.sessionId);
+            logSource.onmessage = function (event) {
+                if (event.data.trim()) appendLog(event.data);
+            };
+
+            // Live Table Switcher
+            document.getElementById('tab-video').addEventListener('click', () => {
+                document.getElementById('videoView').style.display = 'flex';
+                document.getElementById('dbView').style.display = 'none';
+                document.getElementById('tab-video').style.borderColor = 'var(--accent)';
+                document.getElementById('tab-video').style.color = 'white';
+                document.getElementById('tab-db').style.borderColor = 'var(--border)';
+                document.getElementById('tab-db').style.color = 'var(--text-main)';
+            });
+            document.getElementById('tab-db').addEventListener('click', () => {
+                document.getElementById('videoView').style.display = 'none';
+                document.getElementById('dbView').style.display = 'flex';
+                document.getElementById('tab-db').style.borderColor = 'var(--accent)';
+                document.getElementById('tab-db').style.color = 'white';
+                document.getElementById('tab-video').style.borderColor = 'var(--border)';
+                document.getElementById('tab-video').style.color = 'var(--text-main)';
+                fetchDbTable();
+                fetchDbTable();
+            });
+
+            let allTargetAccounts = [];
+
+            function fetchDbTable() {
+                const sourceEl = document.querySelector('input[name="dataSource"]:checked');
+                const source = sourceEl ? sourceEl.value : 'csv';
+                fetch(`/api/target_accounts?source=${source}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        allTargetAccounts = Array.isArray(data) ? data : [];
+                        updateCounters();
+                        filterTargetTable();
+                    })
+                    .catch(err => console.error('fetchDbTable error:', err));
+            }
+
+            function updateCounters() {
+                const counts = {
+                    create_success: 0,
+                    create_failed: 0,
+                    download_success: 0,
+                    download_failed: 0
+                };
+
+                allTargetAccounts.forEach(row => {
+                    const cStatus = (row.create_status || '').toLowerCase();
+                    const dStatus = (row.download_status || '').toLowerCase();
+
+                    if (cStatus.includes('success') || cStatus.includes('✅')) counts.create_success++;
+                    else if (cStatus.includes('failed') || cStatus.includes('❌') || cStatus.includes('error')) counts.create_failed++;
+
+                    if (dStatus.includes('success') || dStatus.includes('✅')) counts.download_success++;
+                    else if (dStatus.includes('failed') || dStatus.includes('❌') || dStatus.includes('error')) counts.download_failed++;
+                });
+
+                document.getElementById('count-create-success').textContent = counts.create_success;
+                document.getElementById('count-create-failed').textContent = counts.create_failed;
+                document.getElementById('count-download-success').textContent = counts.download_success;
+                document.getElementById('count-download-failed').textContent = counts.download_failed;
+            }
+
+            function filterTargetTable() {
+                const searchTerm = document.getElementById('targetSearch').value.toLowerCase();
+                const filterStatus = document.getElementById('filterStatus').value;
+                const tbody = document.getElementById('dbTableBody');
+
+                const filtered = allTargetAccounts.filter(row => {
+                    const matchesSearch = row.email.toLowerCase().includes(searchTerm);
+                    let matchesStatus = true;
+
+                    if (filterStatus !== 'all') {
+                        const statusText = ((row.create_status || '') + ' ' + (row.download_status || '')).toLowerCase();
+                        if (filterStatus === 'success') {
+                            matchesStatus = statusText.includes('success') || statusText.includes('✅');
+                        } else if (filterStatus === 'failed') {
+                            matchesStatus = statusText.includes('failed') || statusText.includes('❌') || statusText.includes('error');
+                        } else if (filterStatus === 'pending') {
+                            const cStat = (row.create_status || '').toLowerCase();
+                            const dStat = (row.download_status || '').toLowerCase();
+                            // Pending means it hasn't succeeded OR failed in EITHER column
+                            const isPending = (s) => !s || s.includes('pending') || (!s.includes('success') && !s.includes('✅') && !s.includes('failed') && !s.includes('❌') && !s.includes('error'));
+                            matchesStatus = isPending(cStat) && isPending(dStat);
+                        }
+                    }
+                    return matchesSearch && matchesStatus;
+                });
+
+                renderTable(filtered);
+                updateBulkDeleteBtn();
+            }
+
+            function renderTable(data) {
+                const tbody = document.getElementById('dbTableBody');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #555;">No accounts match your criteria.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--border)';
+
+                    const badgeStyle = (status) => {
+                        if (!status) return '';
+                        if (status.includes('Pending')) return 'color: var(--text-muted);';
+                        if (status.includes('✅') || status.includes('Success')) return 'color: var(--success); font-weight:500;';
+                        if (status.includes('❌') || status.includes('Failed') || status.includes('Error')) return 'color: var(--error); font-weight:500;';
+                        if (status.includes('...')) return 'color: #f59e0b;';
+                        return '';
+                    };
+
+                    const codes = row.backup_codes || '';
+                    const codesDisplay = codes.length > 20 ? codes.substring(0, 20) + '...' : codes;
+
+                    tr.innerHTML = `
+                    <td style="padding: 0.75rem; text-align: left;"><input type="checkbox" class="target-checkbox" value="${row.email}" onchange="updateBulkDeleteBtn()"></td>
+                    <td style="padding: 0.75rem 0.5rem; word-break: break-all;">${row.email}</td>
+                    <td style="padding: 0.75rem 0.5rem; font-family: monospace; color: #a3a3a3; font-size:0.8rem;">${codesDisplay || 'N/A'}</td>
+                    <td style="padding: 0.75rem 0.5rem; ${badgeStyle(row.create_status)}">${row.create_status || 'Pending'}</td>
+                    <td style="padding: 0.75rem 0.5rem; ${badgeStyle(row.download_status)}">${row.download_status || 'Pending'}</td>
+                    <td style="padding: 0.75rem 0.5rem;"></td>
+                `;
+
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'btn btn-outline';
+                    delBtn.textContent = 'Delete';
+                    delBtn.style.cssText = 'padding: 0.2rem 0.5rem; font-size: 0.75rem; border-color: var(--error); color: var(--error);';
+                    delBtn.onclick = () => deleteAccount(row.email);
+                    tr.lastElementChild.appendChild(delBtn);
+                    tbody.appendChild(tr);
+                });
+
+                // Reset "Select All" if table changes
+                document.getElementById('selectAllTargets').checked = false;
+            }
+
+            function toggleSelectAll(masterCb) {
+                const checkboxes = document.querySelectorAll('.target-checkbox');
+                checkboxes.forEach(cb => cb.checked = masterCb.checked);
+                updateBulkDeleteBtn();
+            }
+
+            function updateBulkDeleteBtn() {
+                const selected = document.querySelectorAll('.target-checkbox:checked');
+                const btn = document.getElementById('bulkDeleteBtn');
+                btn.textContent = `Delete Selected (${selected.length})`;
+                btn.disabled = selected.length === 0;
+                btn.style.opacity = selected.length === 0 ? '0.5' : '1';
+            }
+
+            function deleteSelectedAccounts() {
+                const selected = Array.from(document.querySelectorAll('.target-checkbox:checked')).map(cb => cb.value);
+                if (selected.length === 0) return;
+
+                if (confirm(`Are you sure you want to delete ${selected.length} selected accounts?`)) {
+                    fetch('/api/delete_accounts_bulk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ emails: selected })
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            showToast(data.message);
+                            fetchDbTable();
+                        })
+                        .catch(err => showToast("Bulk delete failed: " + err, 'error'));
+                }
+            }
+
+            // Fetch Polling (Video & Data)
+            setInterval(() => {
+                fetch('/api/video/frame?session_id=' + window.sessionId + '&_t=' + Date.now(), { cache: "no-store" }).then(r => r.text()).then(b64 => {
+                    if (b64 && b64.length > 100) {
+                        liveStream.style.display = 'block';
+                        videoPlaceholder.style.display = 'none';
+                        liveStream.src = "data:image/png;base64," + b64;
+                    } else {
+                        liveStream.style.display = 'none';
+                        videoPlaceholder.style.display = 'block';
+                    }
+                }).catch(() => { });
+            }, 1000);
+
+            // Check if automation is already running on page load
+            function checkRunStatus() {
+                fetch('/api/status?session_id=' + window.sessionId)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.is_running) {
+                            setRunningState(true);
+                        }
+                    });
+            }
+            checkRunStatus();
+
+            function toggleMFASetup() {
+                const btn = document.getElementById('mfaActionBtn');
+                if (btn.innerText === "Disable 2FA") {
+                    const pwd = prompt("Enter your current password to confirm disabling 2FA:");
+                    if (!pwd) return;
+                    fetch('/api/user/mfa/disable', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: pwd })
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            showToast(data.message);
+                            checkMFAStatus();
+                        });
+                    return;
+                }
+
+                fetch('/api/user/mfa/setup', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        const qrDiv = document.getElementById('qrcode');
+                        qrDiv.innerHTML = "";
+                        new QRCode(qrDiv, {
+                            text: data.provision_uri,
+                            width: 160,
+                            height: 160
+                        });
+                        document.getElementById('mfaInfoArea').style.display = 'none';
+                        document.getElementById('mfaSetupArea').style.display = 'flex';
+                    });
+            }
+
+            function cancelMFASetup() {
+                document.getElementById('mfaSetupArea').style.display = 'none';
+                document.getElementById('mfaInfoArea').style.display = 'flex';
+                document.getElementById('mfaCode').value = '';
+            }
+
+            function verifyMFASetup() {
+                const code = document.getElementById('mfaCode').value;
+                if (code.length !== 6) {
+                    showToast("Please enter a 6-digit code", "error");
+                    return;
+                }
+
+                fetch('/api/user/mfa/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code })
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showToast("MFA Enabled successfully!");
+                            cancelMFASetup();
+                            checkMFAStatus();
+                        } else {
+                            showToast(data.message || "Invalid code", "error");
+                        }
+                    });
+            }
+
+            function deleteAccount(email) {
+                if (confirm(`Are you sure you want to remove ${email} from the target list?`)) {
+                    fetch('/api/delete_account', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email })
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            showToast(data.message);
+                            fetchDbTable();
+                        });
+                }
+            }
+
+            function loadSettings() {
+                fetch('/api/user/settings')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.speed) document.getElementById('settingSpeed').value = data.speed;
+                        if (data.showBrowser !== undefined) document.getElementById('settingShowBrowser').checked = data.showBrowser;
+                        if (data.concurrent_sessions) document.getElementById('settingConcurrentSessions').value = data.concurrent_sessions;
+                        if (data.download_path) document.getElementById('settingDownloadPath').value = data.download_path;
+                        if (data.notify_on_complete !== undefined) document.getElementById('settingNotifications').checked = data.notify_on_complete;
+                        if (data.avatar_url) {
+                            updateAvatarUI(data.avatar_url);
+                        }
+                    });
+            }
+
+            function uploadAvatar() {
+                const input = document.getElementById('avatarInput');
+                if (input.files && input.files[0]) {
+                    const formData = new FormData();
+                    formData.append('avatar', input.files[0]);
+                    fetch('/api/user/avatar', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.avatar_url) {
+                                updateAvatarUI(data.avatar_url);
+                                showToast('Profile image updated');
+                            } else {
+                                showToast(data.message || 'Upload failed', 'error');
+                            }
+                        });
+                }
+            }
+
+            function updateAvatarUI(url) {
+                const avatarLarge = document.getElementById('avatarLarge');
+                const profileAvatar = document.querySelector('.profile-avatar');
+                const imgHtml = `<img src="${url}" alt="Avatar">`;
+                if (avatarLarge) avatarLarge.innerHTML = imgHtml;
+                if (profileAvatar) profileAvatar.innerHTML = imgHtml;
+            }
+
+            function saveSettings() {
+                const speed = document.getElementById('settingSpeed').value;
+                const showBrowser = document.getElementById('settingShowBrowser').checked;
+                const concurrent_sessions = parseInt(document.getElementById('settingConcurrentSessions').value) || 3;
+                const download_path = document.getElementById('settingDownloadPath').value.trim();
+                const notify_on_complete = document.getElementById('settingNotifications').checked;
+
+                fetch('/api/user/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ speed, showBrowser, concurrent_sessions, download_path, notify_on_complete })
+                })
+                    .then(r => r.json())
+                    .then(() => showToast('Settings saved'));
+            }
+
+            function loadDrives() {
+                fetch('/api/drives')
+                    .then(r => r.json())
+                    .then(drives => {
+                        const dl = document.getElementById('driveList');
+                        dl.innerHTML = '';
+                        drives.forEach(d => {
+                            const opt = document.createElement('option');
+                            const label = d.free_gb !== null
+                                ? `${d.path} (${d.free_gb} GB free / ${d.total_gb} GB total)`
+                                : d.path;
+                            opt.value = d.path;
+                            opt.label = label;
+                            dl.appendChild(opt);
+                        });
+                        showToast(drives.length + ' drive(s) found — click the path field to select');
+                    })
+                    .catch(() => showToast('Could not load drives', 'error'));
+            }
+
+            function checkMFAStatus() {
+                fetch('/api/settings').then(r => r.json()).then(data => {
+                    const badge = document.getElementById('mfaBadge');
+                    const btn = document.getElementById('mfaActionBtn');
+                    if (badge && btn) {
+                        if (data._mfa_enabled) {
+                            badge.innerText = "● Enabled";
+                            badge.style.color = "var(--success)";
+                            btn.innerText = "Disable 2FA";
+                            btn.style.color = "var(--error)";
+                        } else {
+                            badge.innerText = "● Disabled";
+                            badge.style.color = "var(--text-muted)";
+                            btn.innerText = "Enable 2FA";
+                            btn.style.color = "var(--accent)";
+                        }
+                    }
+                });
+            }
+
+            function openAddAccountModal() {
+                document.getElementById('addAccountModal').style.display = 'flex';
+            }
+
+            function closeAddAccountModal() {
+                document.getElementById('addAccountModal').style.display = 'none';
+            }
+
+            function submitAddAccount() {
+                const email = document.getElementById('manual_email').value.trim();
+                const password = document.getElementById('manual_password').value;
+                const backup = document.getElementById('manual_backup').value.trim();
+
+                if (!email || !password) {
+                    showToast("Email and Password are required", "error");
+                    return;
+                }
+
+                const btn = document.getElementById('manualSubmitBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Saving...';
+
+                fetch('/api/add_target_account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: password, backup_codes: backup })
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        btn.disabled = false;
+                        btn.innerText = 'Save Account';
+                        if (data.message.includes('successfully')) {
+                            appendLog("✅ [Manual] " + data.message);
+                            closeAddAccountModal();
+                            // Clear inputs
+                            document.getElementById('manual_email').value = '';
+                            document.getElementById('manual_password').value = '';
+                            document.getElementById('manual_backup').value = '';
+                            fetchDbTable(); // Refresh table
+                        } else {
+                            showToast("Error: " + data.message, "error");
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerText = 'Save Account';
+                        showToast("Request failed: " + err, "error");
+                    });
+            }
+
+            // Theme Management
+            function changeTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('takeout_theme', theme);
+                document.getElementById('settingTheme').value = theme;
+            }
+
+            function initTheme() {
+                const savedTheme = localStorage.getItem('takeout_theme') || 'midnight';
+                changeTheme(savedTheme);
+            }
+
+            // Add to DOMContentLoaded listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                initTheme();
+                checkMFAStatus();
+                loadSettings();
+                fetchDbTable();
+
+                // Check for MFA setup nudge redirect
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('mfa_setup') === '1') {
+                    toggleMFASetup();
+                    // Clean up URL without refreshing
+                    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({ path: newUrl }, '', newUrl);
+                }
+            });
+            function closeHistory() {
+                document.getElementById('historyModal').style.display = 'none';
+            }
+        </script>
+</body>
+
+</html>

@@ -1,0 +1,15 @@
+flask
+selenium
+webdriver-manager
+gspread
+google-auth
+authlib
+pyautogui
+python-dotenv
+pyotp
+fpdf2
+openpyxl
+flask-limiter
+cryptography
+flask-wtf
+cachetools

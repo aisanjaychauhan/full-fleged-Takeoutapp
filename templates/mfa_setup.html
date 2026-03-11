@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup 2FA - Takeout Automation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0a0c10;
+            --bg-panel: #11141b;
+            --bg-input: #1b1f2a;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #242936;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .setup-card {
+            background: var(--bg-panel);
+            max-width: 480px;
+            width: 100%;
+            padding: 3rem;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+
+        .progress-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            justify-content: center;
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+
+        .step-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: inline-block;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1.25rem;
+            text-align: center;
+            letter-spacing: 0.25em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 1.1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-input);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="setup-card">
+        <div class="progress-bar">
+            <div class="step-dot active"></div>
+            <div class="step-dot active"></div>
+            <div class="step-dot"></div>
+        </div>
+
+        <h1>Verify Authentication</h1>
+        <p>Scan the code below with your 2FA app (Google Authenticator, etc.) then enter the 6-digit code to finalize
+            setup.</p>
+
+        <div id="error-alert" class="alert alert-error"></div>
+
+        <div class="qr-container">
+            <div id="qrcode"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Verification Code</label>
+            <input type="text" id="mfaCode" placeholder="000000" maxlength="6" autocomplete="one-time-code">
+        </div>
+
+        <button class="btn btn-primary" onclick="verifySetup()" id="verifyBtn">Finalize Security Setup</button>
+        <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <script>
+        // Load QR Code on entry
+        fetch('/api/user/mfa/setup', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                new QRCode(document.getElementById("qrcode"), {
+                    text: data.provision_uri,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            });
+
+        async function verifySetup() {
+            const code = document.getElementById('mfaCode').value;
+            const btn = document.getElementById('verifyBtn');
+            const alert = document.getElementById('error-alert');
+
+            if (code.length !== 6) {
+                showError("Please enter a 6-digit code.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Verifying...";
+            alert.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/user/mfa/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    window.location.href = '/?mfa_verified=1';
+                } else {
+                    showError(data.message || "Verification failed. Try again.");
+                    btn.disabled = false;
+                    btn.innerText = "Finalize Security Setup";
+                }
+            } catch (err) {
+                showError("Connection error. Check your network.");
+                btn.disabled = false;
+                btn.innerText = "Finalize Security Setup";
+            }
+        }
+
+        function showError(msg) {
+            const alert = document.getElementById('error-alert');
+            alert.innerText = msg;
+            alert.style.display = 'block';
+        }
+
+        // Auto-focus input
+        document.getElementById('mfaCode').focus();
+
+        // Submit on Enter
+        document.getElementById('mfaCode').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') verifySetup();
+        });
+    </script>
+</body>
+
+</html>
