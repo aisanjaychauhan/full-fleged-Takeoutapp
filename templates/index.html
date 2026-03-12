@@ -92,8 +92,21 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
-            font-size: 1.1rem;
-            /* Increased from default */
+            font-size: 1.05rem;
+        }
+
+        /* Responsive scaling */
+        @media (max-width: 1536px) {
+            body { font-size: 0.95rem; }
+            .container { padding: 1rem !important; gap: 1rem !important; }
+            .card { padding: 1.25rem !important; }
+            .side-pane { gap: 1rem !important; }
+        }
+
+        @media (max-width: 1280px) {
+            body { font-size: 0.9rem; }
+            .container { padding: 0.75rem !important; gap: 0.75rem !important; }
+            .card { padding: 1rem !important; }
         }
 
         [data-theme="light"] body {
@@ -977,9 +990,9 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 0.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
                         <button id="startBtn" class="btn"
-                            style="flex: 2; padding: 1rem; font-size: 0.95rem; background: #10b981;">
+                            style="grid-column: span 2; padding: 0.85rem; font-size: 0.95rem; background: #10b981;">
                             <span id="startBtnIcon" style="display: flex; align-items: center; margin-right: 0.5rem;">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -989,35 +1002,35 @@
                             <span id="startBtnText">Start Automation</span>
                         </button>
                         <button id="pauseBtn" class="btn" disabled
-                            style="flex: 1; padding: 1rem; font-size: 0.95rem; background: #f59e0b; color: white;">Pause</button>
+                            style="padding: 0.75rem; font-size: 0.9rem; background: #f59e0b; color: white;">Pause</button>
                         <button id="stopBtn" class="btn"
-                            style="flex: 1; padding: 1rem; font-size: 0.95rem; background: #ef4444;">Stop</button>
+                            style="padding: 0.75rem; font-size: 0.9rem; background: #ef4444;">Stop</button>
                     </div>
 
-                    <div style="display: flex; gap: 0.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
                         <button id="showBrowserBtn" class="btn btn-outline" onclick="showBrowser()"
-                            style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-color: #3b82f6; color: #60a5fa;">👁️
+                            style="padding: 0.65rem; font-size: 0.8rem; border-color: #3b82f6; color: #60a5fa;">👁️
                             Show Browser</button>
+                        <button id="hideBrowserBtn" class="btn btn-outline" onclick="hideBrowser()"
+                            style="padding: 0.65rem; font-size: 0.8rem; border-color: #64748b; color: #94a3b8;">👻
+                            Hide Browser</button>
                         <button id="resetSessionBtn" class="btn btn-outline" onclick="resetSession()"
-                            style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-color: #fca5a5; color: #f87171;"
+                            style="grid-column: span 2; padding: 0.65rem; font-size: 0.8rem; border-color: #fca5a5; color: #f87171;"
                             title="Emergency Stop: kills all threads and browser processes">⚠️ Reset System</button>
                     </div>
-                        <button id="hideBrowserBtn" class="btn btn-outline" onclick="hideBrowser()"
-                            style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-color: #64748b; color: #94a3b8;">👻
-                            Hide Browser</button>
                     </div>
 
                     <!-- Terminal output -->
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0;">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                            <strong style="color: #fff; font-size: 1.1rem;">Action Logs</strong>
-                            <div style="display: flex; gap: 0.4rem;">
-                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"
+                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; flex-shrink: 0;">
+                            <strong style="color: #fff; font-size: 1rem;">Action Logs</strong>
+                            <div style="display: flex; gap: 0.35rem;">
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
                                     onclick="openHistory()">History</button>
-                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
                                     onclick="window.location.href='/api/export/logs?session_id=' + window.sessionId">Export</button>
-                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"
+                                <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
                                     onclick="clearLogs()">Clear</button>
                             </div>
                         </div>
