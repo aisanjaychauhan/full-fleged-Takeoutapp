@@ -998,6 +998,10 @@
                         <button id="showBrowserBtn" class="btn btn-outline" onclick="showBrowser()"
                             style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-color: #3b82f6; color: #60a5fa;">👁️
                             Show Browser</button>
+                        <button id="resetSessionBtn" class="btn btn-outline" onclick="resetSession()"
+                            style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-color: #fca5a5; color: #f87171;"
+                            title="Emergency Stop: kills all threads and browser processes">⚠️ Reset System</button>
+                    </div>
                         <button id="hideBrowserBtn" class="btn btn-outline" onclick="hideBrowser()"
                             style="flex: 1; padding: 0.75rem; font-size: 0.85rem; border-color: #64748b; color: #94a3b8;">👻
                             Hide Browser</button>
@@ -1276,6 +1280,16 @@
                     setRunningState(false);
                 });
             });
+
+            function resetSession() {
+                if (confirm("EMERGENCY RESET: This will forcefully terminate all active automation threads and browser processes. Use this only if the system is stuck. Proceed?")) {
+                    fetch('/api/reset?session_id=' + window.sessionId, { method: 'POST' }).then(r => r.json()).then(d => {
+                        appendLog(">> [!] " + d.message);
+                        showToast(d.message, 'success');
+                        setRunningState(false);
+                    }).catch(err => showToast("Reset failed: " + err, 'error'));
+                }
+            }
 
             document.getElementById('startBtn').addEventListener('click', () => {
                 const modeItem = document.getElementById('runMode');

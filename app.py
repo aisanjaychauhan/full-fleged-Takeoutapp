@@ -298,9 +298,29 @@ class SessionContext:
         self.frame_b64 = ""
         self.stop_event = None
         self.pause_event = None
-        self.driver = None
+        self.active_drivers = [] # List of all drivers in this session
+        self.driver_lock = threading.Lock()
         self.log_file = None
         self.running_thread = None
+
+    def add_driver(self, driver):
+        with self.driver_lock:
+            if driver not in self.active_drivers:
+                self.active_drivers.append(driver)
+
+    def remove_driver(self, driver):
+        with self.driver_lock:
+            if driver in self.active_drivers:
+                self.active_drivers.remove(driver)
+
+    def cleanup_drivers(self):
+        with self.driver_lock:
+            for driver in self.active_drivers[:]:
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
+            self.active_drivers.clear()
 
 # TTL cache: max 500 concurrent sessions, auto-expire after 1 hour (prevents memory DoS)
 sessions = TTLCache(maxsize=500, ttl=3600)
@@ -832,15 +852,21 @@ def upload_csv():
         
         count = 0
         for row in csv_input:
-            # Robust mapping for email, password, and backup codes
+            # Robust mapping for email, password, backup codes, and statuses
             email = (row.get('email') or row.get('username') or row.get('e-mail') or '').strip()
             password = (row.get('password') or row.get('pwd') or row.get('pass') or '').strip()
             backup_codes = (row.get('backupcodes') or row.get('backup codes') or row.get('backup_codes') or 
                             row.get('backup') or row.get('2fa') or row.get('mfa') or '').strip()
             
+            # Extract statuses if present, default to 'Pending'
+            c_status = (row.get('createstatus') or row.get('create_status') or row.get('create status') or 'Pending').strip()
+            d_status = (row.get('downloadstatus') or row.get('download_status') or row.get('download status') or 'Pending').strip()
+            
             if email and password:
-                conn.execute("INSERT INTO target_accounts (email, password, backup_codes, owner) VALUES (?, ?, ?, ?)",
-                             (email, encrypt_password(password), backup_codes, username))
+                conn.execute("""
+                    INSERT INTO target_accounts (email, password, backup_codes, create_status, download_status, owner) 
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (email, encrypt_password(password), backup_codes, c_status, d_status, username))
                 count += 1
         
         conn.commit()
@@ -1105,8 +1131,17 @@ def get_run_status():
     is_running = False
     if session_ctx.running_thread and session_ctx.running_thread.is_alive():
         is_running = True
+    
+    # Also check if any drivers are still hanging around
+    has_active_drivers = False
+    with session_ctx.driver_lock:
+        if session_ctx.active_drivers:
+            has_active_drivers = True
+
     return jsonify({
-        "is_running": is_running,
+        "is_running": is_running or has_active_drivers,
+        "is_thread_alive": is_running,
+        "active_drivers_count": len(session_ctx.active_drivers) if hasattr(session_ctx, 'active_drivers') else 0,
         "session_id": session_ctx.session_id
     })
 
@@ -1118,15 +1153,26 @@ def stop_automation():
         session_ctx.stop_event.set()
         if session_ctx.pause_event:
             session_ctx.pause_event.set()
-        if hasattr(session_ctx, 'driver') and session_ctx.driver:
-            try:
-                session_ctx.driver.quit()
-            except Exception:
-                pass
-            session_ctx.driver = None
+        
+        # Robust cleanup of ALL drivers tracked in this session
+        session_ctx.cleanup_drivers()
+        
         log_activity("AUTOMATION_STOP")
-        return jsonify({"message": "Stopping automation..."})
+        return jsonify({"message": "Stopping all automation sessions..."})
     return jsonify({"message": "Not running"})
+
+@app.route("/api/reset", methods=["POST"])
+@api_login_required
+def reset_session():
+    """Emergency reset: clears the session state and kills all drivers."""
+    session_ctx = get_session(request)
+    if session_ctx.stop_event:
+        session_ctx.stop_event.set()
+    
+    session_ctx.cleanup_drivers()
+    session_ctx.logs.append("[SYSTEM] Emergency reset triggered. Cleared all active drivers.")
+    log_activity("SESSION_RESET")
+    return jsonify({"message": "Session reset successfully. All drivers terminated."})
 
 @app.route("/api/pause", methods=["POST"])
 @api_login_required

@@ -171,6 +171,27 @@
             border: 1px solid rgba(239, 68, 68, 0.2);
         }
     </style>
+    <!-- CSRF token for JS API calls -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        // Global CSRF interceptor — automatically adds X-CSRFToken to all fetch() POST/PUT/PATCH/DELETE calls
+        (function () {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const _fetch = window.fetch;
+            window.fetch = function (url, options = {}) {
+                const method = (options.method || 'GET').toUpperCase();
+                if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    if (options.headers instanceof Headers) {
+                        options.headers.set('X-CSRFToken', csrfToken);
+                    } else {
+                        options.headers['X-CSRFToken'] = csrfToken;
+                    }
+                }
+                return _fetch(url, options);
+            };
+        })();
+    </script>
 </head>
 
 <body>
@@ -203,7 +224,12 @@
     <script>
         // Load QR Code on entry
         fetch('/api/user/mfa/setup', { method: 'POST' })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(err => { throw new Error(err.error || err.message || "Failed to initialize 2FA"); });
+                }
+                return res.json();
+            })
             .then(data => {
                 new QRCode(document.getElementById("qrcode"), {
                     text: data.provision_uri,
@@ -213,6 +239,10 @@
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.H
                 });
+            })
+            .catch(err => {
+                showError(err.message);
+                console.error("MFA Setup Error:", err);
             });
 
         async function verifySetup() {

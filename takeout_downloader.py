@@ -448,7 +448,10 @@ def run_all(settings, context, data_source="csv", **kwargs):
             update_status(email, f"Starting {browser_type}", row_idx, sheet)
             driver = create_driver(email)
             if context:
-                context.driver = driver
+                if hasattr(context, 'add_driver'):
+                    context.add_driver(driver)
+                else:
+                    context.driver = driver
             wait = WebDriverWait(driver, 30)
 
             driver.get(TAKEOUT_URL)
@@ -761,11 +764,15 @@ def run_all(settings, context, data_source="csv", **kwargs):
         finally:
             if driver:
                 try:
+                    if context and hasattr(context, 'remove_driver'):
+                        context.remove_driver(driver)
                     driver.quit()
                 except Exception:
                     pass
             emit_log(f"Browser closed for {email}")
-            if context: context.frame_b64 = ""
+            if context:
+                if not hasattr(context, 'active_drivers') or not context.active_drivers:
+                    context.frame_b64 = ""
 
     def process_row(row_dict, row_idx=None, sheet=None):
         check_cancel()
